@@ -4,13 +4,14 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
-interface Props {
-  onCardAdded: () => void; // Kakailanganin para ma-refresh ang listahan
+interface AddFlashcardFormProps {
+  onCardAdded: () => void;
 }
 
-export default function AddFlashcardForm({ onCardAdded }: Props) {
+export default function AddFlashcardForm({ onCardAdded }: AddFlashcardFormProps) {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
+  const [category, setCategory] = useState('General');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -18,11 +19,13 @@ export default function AddFlashcardForm({ onCardAdded }: Props) {
     if (!question || !answer) return;
 
     setLoading(true);
-
-    // I-insert sa Supabase table na 'flashcards'
-    const { error } = await supabase
-      .from('flashcards')
-      .insert([{ question, answer }]);
+    const { error } = await supabase.from('flashcards').insert([
+      {
+        question,
+        answer,
+        category: category.trim() || 'General',
+      },
+    ]);
 
     setLoading(false);
 
@@ -31,13 +34,21 @@ export default function AddFlashcardForm({ onCardAdded }: Props) {
     } else {
       setQuestion('');
       setAnswer('');
-      onCardAdded(); // Tawagin ito para ma-reload ang listahan ng cards
+      setCategory('General');
+      onCardAdded();
     }
   };
 
   return (
     <form onSubmit={handleSubmit} style={formStyle}>
-      <h3>Magdagdag ng Bagong Flashcard</h3>
+      <h3> Magdagdag ng Bagong Flashcard</h3>
+      <input
+        type="text"
+        placeholder="Subject / Folder (e.g. Science, Math)"
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}
+        style={inputStyle}
+      />
       <input
         type="text"
         placeholder="Tanong (Question)"
@@ -61,29 +72,30 @@ export default function AddFlashcardForm({ onCardAdded }: Props) {
   );
 }
 
-// Simple Inline Styles
-const formStyle = {
+const formStyle: React.CSSProperties = {
   maxWidth: '400px',
-  margin: '20px auto',
+  margin: '0 auto 20px auto',
+  padding: '16px',
+  backgroundColor: '#f1f5f9',
+  borderRadius: '12px',
   display: 'flex',
-  flexDirection: 'column' as const,
+  flexDirection: 'column',
   gap: '10px',
-  padding: '20px',
-  border: '1px solid #ccc',
-  borderRadius: '8px',
 };
 
-const inputStyle = {
-  padding: '10px',
-  borderRadius: '4px',
-  border: '1px solid #ccc',
+const inputStyle: React.CSSProperties = {
+  padding: '10px 12px',
+  borderRadius: '6px',
+  border: '1px solid #cbd5e1',
+  fontSize: '14px',
 };
 
-const buttonStyle = {
+const buttonStyle: React.CSSProperties = {
   padding: '10px',
   backgroundColor: '#2563eb',
   color: 'white',
+  fontWeight: 'bold',
   border: 'none',
-  borderRadius: '4px',
+  borderRadius: '6px',
   cursor: 'pointer',
 };
