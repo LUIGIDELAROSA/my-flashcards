@@ -50,10 +50,7 @@ export default function Home() {
 
     if (!confirmDelete) return;
 
-    // 1. Burahin muna ang cards sa ilalim ng folder
     await supabase.from('flashcards').delete().eq('folder_id', folderId);
-
-    // 2. Burahin ang folder mismo
     const { error } = await supabase.from('folders').delete().eq('id', folderId);
 
     if (error) {
@@ -71,6 +68,11 @@ export default function Home() {
       ? cards
       : cards.filter((card) => card.folder_id === selectedFolderId);
 
+  const activeFolderName =
+    selectedFolderId === 'all'
+      ? 'Lahat ng Sets'
+      : folders.find((f) => f.id === selectedFolderId)?.name || 'Folder';
+
   return (
     <div style={pageWrapperStyle}>
       <main style={mainContainerStyle}>
@@ -82,7 +84,7 @@ export default function Home() {
           </div>
           {!showCreateForm && (
             <button onClick={() => setShowCreateForm(true)} style={createSetBtnStyle}>
-              ➕ Gumawa ng Set
+              ➕ Gumawa / Magdagdag ng Set
             </button>
           )}
         </header>
@@ -90,6 +92,8 @@ export default function Home() {
         {/* CREATE SET FORM VIEW */}
         {showCreateForm ? (
           <CreateSetForm
+            folders={folders}
+            initialFolderId={selectedFolderId}
             onSetCreated={() => {
               setShowCreateForm(false);
               fetchData();
@@ -98,7 +102,7 @@ export default function Home() {
           />
         ) : (
           <>
-            {/* 📁 SUBJECT / FOLDER TABS SECTION WITH DELETE */}
+            {/* 📁 SUBJECT / FOLDER TABS SECTION */}
             <section style={sectionBoxStyle}>
               <span style={folderLabelStyle}>📁 Subject / Folders:</span>
               <div style={folderContainerStyle}>
@@ -154,30 +158,41 @@ export default function Home() {
               </div>
             </section>
 
-            {/* 🎯 VIEW SWITCHER TABS */}
-            <div style={tabContainerStyle}>
-              <button
-                onClick={() => setMode('study')}
-                style={{
-                  ...tabButtonStyle,
-                  backgroundColor: mode === 'study' ? '#800000' : '#ffffff',
-                  color: mode === 'study' ? '#ffffff' : '#374155',
-                  border: mode === 'study' ? '2px solid #800000' : '1px solid #d1d5db',
-                }}
-              >
-                🎯 Study Mode
-              </button>
-              <button
-                onClick={() => setMode('grid')}
-                style={{
-                  ...tabButtonStyle,
-                  backgroundColor: mode === 'grid' ? '#800000' : '#ffffff',
-                  color: mode === 'grid' ? '#ffffff' : '#374155',
-                  border: mode === 'grid' ? '2px solid #800000' : '1px solid #d1d5db',
-                }}
-              >
-                📋 View All ({filteredCards.length})
-              </button>
+            {/* 🎯 VIEW SWITCHER & ADD CARDS BAR */}
+            <div style={actionHeaderStyle}>
+              <div style={tabContainerStyle}>
+                <button
+                  onClick={() => setMode('study')}
+                  style={{
+                    ...tabButtonStyle,
+                    backgroundColor: mode === 'study' ? '#800000' : '#ffffff',
+                    color: mode === 'study' ? '#ffffff' : '#374155',
+                    border: mode === 'study' ? '2px solid #800000' : '1px solid #d1d5db',
+                  }}
+                >
+                  🎯 Study Mode
+                </button>
+                <button
+                  onClick={() => setMode('grid')}
+                  style={{
+                    ...tabButtonStyle,
+                    backgroundColor: mode === 'grid' ? '#800000' : '#ffffff',
+                    color: mode === 'grid' ? '#ffffff' : '#374155',
+                    border: mode === 'grid' ? '2px solid #800000' : '1px solid #d1d5db',
+                  }}
+                >
+                  📋 View All ({filteredCards.length})
+                </button>
+              </div>
+
+              {selectedFolderId !== 'all' && (
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  style={addMoreToFolderBtnStyle}
+                >
+                  ➕ Magdagdag ng Cards sa "{activeFolderName}"
+                </button>
+              )}
             </div>
 
             {/* 🃏 MAIN CONTENT DISPLAY */}
@@ -185,7 +200,7 @@ export default function Home() {
               <div style={statusMessageStyle}>Ikinakarga ang mga flashcards...</div>
             ) : filteredCards.length === 0 ? (
               <div style={statusMessageStyle}>
-                Wala pang flashcards sa folder na ito. I-click ang <b>"➕ Gumawa ng Set"</b> sa taas para magdagdag!
+                Wala pang flashcards sa folder na ito. I-click ang <b>"➕ Magdagdag ng Cards"</b> sa taas!
               </div>
             ) : mode === 'study' ? (
               <div style={studyWrapperStyle}>
@@ -336,10 +351,18 @@ const deleteFolderBtnStyle: React.CSSProperties = {
   marginLeft: '6px',
 };
 
+const actionHeaderStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  flexWrap: 'wrap',
+  gap: '12px',
+  marginBottom: '20px',
+};
+
 const tabContainerStyle: React.CSSProperties = {
   display: 'flex',
   gap: '10px',
-  marginBottom: '20px',
   flexWrap: 'wrap',
 };
 
@@ -349,8 +372,17 @@ const tabButtonStyle: React.CSSProperties = {
   fontWeight: 700,
   borderRadius: '10px',
   cursor: 'pointer',
-  flex: '1 1 auto',
-  textAlign: 'center',
+};
+
+const addMoreToFolderBtnStyle: React.CSSProperties = {
+  padding: '10px 18px',
+  backgroundColor: '#fff0f0',
+  color: '#800000',
+  border: '1px solid #800000',
+  borderRadius: '10px',
+  fontWeight: 700,
+  fontSize: '0.85rem',
+  cursor: 'pointer',
 };
 
 const studyWrapperStyle: React.CSSProperties = {

@@ -26,14 +26,13 @@ export default function StudyMode({ cards }: StudyModeProps) {
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
 
-  // I-reset kapag nagpalit ng folder / set ng cards
   useEffect(() => {
     restartQuiz();
   }, [cards]);
 
   const currentCard = cards[currentIndex];
 
-  // 1. I-check ang pinalo na sagot ng user
+  // I-check ang pinalo na sagot ng user
   const handleCheckAnswer = () => {
     if (!userInput.trim() || hasAnswered) return;
 
@@ -50,20 +49,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
     }
   };
 
-  // 2. Manual Self-Rating ("✅ Tama" o "❌ Mali" button)
-  const handleManualMark = (correct: boolean) => {
-    if (hasAnswered) return;
-
-    setIsCorrect(correct);
-    setHasAnswered(true);
-    setIsFlipped(true);
-
-    if (correct) {
-      setScore((prev) => prev + 1);
-    }
-  };
-
-  // 3. Lumipat sa Susunod na Card
+  // Lumipat sa Susunod na Card
   const handleNextCard = () => {
     if (currentIndex + 1 < cards.length) {
       setCurrentIndex((prev) => prev + 1);
@@ -72,11 +58,11 @@ export default function StudyMode({ cards }: StudyModeProps) {
       setHasAnswered(false);
       setIsCorrect(null);
     } else {
-      setShowResult(true); // Tapos na ang lahat ng cards!
+      setShowResult(true);
     }
   };
 
-  // 4. I-restart ang Quiz
+  // I-restart ang Quiz
   const restartQuiz = () => {
     setCurrentIndex(0);
     setScore(0);
@@ -184,22 +170,6 @@ export default function StudyMode({ cards }: StudyModeProps) {
               Suriin
             </button>
           </div>
-
-          <div style={manualRateGroupStyle}>
-            <span style={orLabelStyle}>o kaya piliin:</span>
-            <button
-              onClick={() => handleManualMark(true)}
-              style={correctBtnStyle}
-            >
-              ✅ Tama (+1)
-            </button>
-            <button
-              onClick={() => handleManualMark(false)}
-              style={wrongBtnStyle}
-            >
-              ❌ Mali (+0)
-            </button>
-          </div>
         </div>
       ) : (
         /* 💡 RESULT / NEXT BUTTON */
@@ -230,7 +200,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
   );
 }
 
-// 🎨 STYLES (WHITE & MAROON)
+// 🎨 STYLES
 const containerStyle: React.CSSProperties = {
   width: '100%',
   maxWidth: '600px',
@@ -324,38 +294,6 @@ const checkBtnStyle: React.CSSProperties = {
   color: '#ffffff',
   border: 'none',
   borderRadius: '10px',
-  fontWeight: 700,
-  cursor: 'pointer',
-};
-
-const manualRateGroupStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  justifyContent: 'center',
-};
-
-const orLabelStyle: React.CSSProperties = {
-  fontSize: '0.8rem',
-  color: '#6b7280',
-};
-
-const correctBtnStyle: React.CSSProperties = {
-  padding: '8px 16px',
-  backgroundColor: '#dcfce7',
-  color: '#15803d',
-  border: '1px solid #86efac',
-  borderRadius: '8px',
-  fontWeight: 700,
-  cursor: 'pointer',
-};
-
-const wrongBtnStyle: React.CSSProperties = {
-  padding: '8px 16px',
-  backgroundColor: '#fee2e2',
-  color: '#b91c1c',
-  border: '1px solid #fca5a5',
-  borderRadius: '8px',
   fontWeight: 700,
   cursor: 'pointer',
 };

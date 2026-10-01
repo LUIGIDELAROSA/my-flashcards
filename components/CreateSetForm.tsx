@@ -4,6 +4,11 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
+interface Folder {
+  id: string;
+  name: string;
+}
+
 interface CardInput {
   id: string;
   question: string;
@@ -11,12 +16,22 @@ interface CardInput {
 }
 
 interface CreateSetFormProps {
+  folders: Folder[];
+  initialFolderId?: string;
   onSetCreated: () => void;
   onCancel?: () => void;
 }
 
-export default function CreateSetForm({ onSetCreated, onCancel }: CreateSetFormProps) {
-  const [title, setTitle] = useState('');
+export default function CreateSetForm({
+  folders,
+  initialFolderId = 'new',
+  onSetCreated,
+  onCancel,
+}: CreateSetFormProps) {
+  const [selectedFolderId, setSelectedFolderId] = useState<string>(
+    initialFolderId === 'all' ? 'new' : initialFolderId
+  );
+  const [newTitle, setNewTitle] = useState('');
   const [description, setDescription] = useState('');
   const [cards, setCards] = useState<CardInput[]>([
     { id: '1', question: '', answer: '' },
@@ -24,7 +39,6 @@ export default function CreateSetForm({ onSetCreated, onCancel }: CreateSetFormP
   ]);
   const [loading, setLoading] = useState(false);
 
-  // Magdagdag ng panibagong card row
   const addCardRow = () => {
     setCards((prev) => [
       ...prev,
@@ -32,7 +46,6 @@ export default function CreateSetForm({ onSetCreated, onCancel }: CreateSetFormP
     ]);
   };
 
-  // Magbura ng partikular na card row
   const removeCardRow = (index: number) => {
     if (cards.length <= 1) {
       alert('Kailangan ng kahit isang flashcard sa set!');
@@ -41,7 +54,6 @@ export default function CreateSetForm({ onSetCreated, onCancel }: CreateSetFormP
     setCards((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // I-update ang input value ng card
   const handleCardChange = (index: number, field: 'question' | 'answer', value: string) => {
     setCards((prev) => {
       const updated = [...prev];
@@ -50,13 +62,7 @@ export default function CreateSetForm({ onSetCreated, onCancel }: CreateSetFormP
     });
   };
 
-  // I-save ang buong Set (Folder + All Cards) sa Supabase
   const handleSave = async () => {
-    if (!title.trim()) {
-      alert('Mangyaring maglagay ng Title / Subject name!');
-      return;
-    }
-
     const validCards = cards.filter((c) => c.question.trim() && c.answer.trim());
     if (validCards.length === 0) {
       alert('Maglagay ng kahit isang kumpletong flashcard (Tanong at Sagot)!');
@@ -64,25 +70,36 @@ export default function CreateSetForm({ onSetCreated, onCancel }: CreateSetFormP
     }
 
     setLoading(true);
+    let targetFolderId = selectedFolderId;
 
-    // 1. Gumawa ng bagong Folder / Subject
-    const { data: folderData, error: folderError } = await supabase
-      .from('folders')
-      .insert([{ name: title.trim() }])
-      .select()
-      .single();
+    // 1. Kung "new" folder ang pinili, gagawa ng bagong folder record sa DB
+    if (selectedFolderId === 'new') {
+      if (!newTitle.trim()) {
+        alert('Mangyaring maglagay ng Title / Subject name!');
+        setLoading(false);
+        return;
+      }
 
-    if (folderError) {
-      alert('Error creating set: ' + folderError.message);
-      setLoading(false);
-      return;
+      const { data: folderData, error: folderError } = await supabase
+        .from('folders')
+        .insert([{ name: newTitle.trim() }])
+        .select()
+        .single();
+
+      if (folderError) {
+        alert('Error creating folder: ' + folderError.message);
+        setLoading(false);
+        return;
+      }
+
+      targetFolderId = folderData.id;
     }
 
-    // 2. I-batch insert ang lahat ng valid flashcards sa ginawang folder
+    // 2. I-insert ang mga flashcards sa napiling folder ID
     const cardsToInsert = validCards.map((c) => ({
       question: c.question.trim(),
       answer: c.answer.trim(),
-      folder_id: folderData.id,
+      folder_id: targetFolderId,
     }));
 
     const { error: cardsError } = await supabase
@@ -94,7 +111,7 @@ export default function CreateSetForm({ onSetCreated, onCancel }: CreateSetFormP
     if (cardsError) {
       alert('Error saving flashcards: ' + cardsError.message);
     } else {
-      setTitle('');
+      setNewTitle('');
       setDescription('');
       setCards([
         { id: '1', question: '', answer: '' },
@@ -109,8 +126,10 @@ export default function CreateSetForm({ onSetCreated, onCancel }: CreateSetFormP
       {/* 🏷️ TOP HEADER */}
       <div style={headerStyle}>
         <div>
-          <h2 style={titleHeadingStyle}>Gumawa ng bagong flashcard set</h2>
-          <span style={subHeadingStyle}>Pumili ng pamagat at magdagdag ng mga card</span>
+          <h2 style={titleHeadingStyle}>
+            {selectedFolderId === 'new' ? 'Gumawa ng Bagong Set' : 'Magdagdag ng Cards sa Folder'}
+          </h2>
+          <span style={subHeadingStyle}>Pumili ng folder at magdagdag ng mga card</span>
         </div>
         <div style={headerBtnGroupStyle}>
           {onCancel && (
@@ -119,34 +138,51 @@ export default function CreateSetForm({ onSetCreated, onCancel }: CreateSetFormP
             </button>
           )}
           <button onClick={handleSave} disabled={loading} style={maroonPrimaryBtnStyle}>
-            {loading ? 'Sina-save...' : 'Gumawa & I-save'}
+            {loading ? 'Sina-save...' : 'I-save ang Cards'}
           </button>
         </div>
       </div>
 
-      {/* 📝 FOLDER / SUBJECT DETAILS */}
+      {/* 📁 FOLDER SELECTOR & TITLE */}
       <div style={inputSectionStyle}>
-        <input
-          type="text"
-          placeholder="Title (e.g. Differential Equations, BOSH)"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          style={titleInputStyle}
-        />
-        <input
-          type="text"
-          placeholder="Add a description... (optional)"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          style={descriptionInputStyle}
-        />
+        <label style={labelStyle}>Lagyan sa Folder:</label>
+        <select
+          value={selectedFolderId}
+          onChange={(e) => setSelectedFolderId(e.target.value)}
+          style={selectStyle}
+        >
+          <option value="new">➕ [ Gumawa ng Bagong Folder ]</option>
+          {folders.map((f) => (
+            <option key={f.id} value={f.id}>
+              📂 {f.name}
+            </option>
+          ))}
+        </select>
+
+        {selectedFolderId === 'new' && (
+          <>
+            <input
+              type="text"
+              placeholder="Title (e.g. Differential Equations, BOSH)"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              style={titleInputStyle}
+            />
+            <input
+              type="text"
+              placeholder="Add a description... (optional)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              style={descriptionInputStyle}
+            />
+          </>
+        )}
       </div>
 
       {/* 🃏 FLASHCARD ROWS LIST */}
       <div style={cardsListContainerStyle}>
         {cards.map((card, index) => (
           <div key={card.id} style={cardRowStyle}>
-            {/* Card Row Header */}
             <div style={cardRowHeaderStyle}>
               <span style={cardIndexStyle}>{index + 1}</span>
               <button
@@ -158,7 +194,6 @@ export default function CreateSetForm({ onSetCreated, onCancel }: CreateSetFormP
               </button>
             </div>
 
-            {/* Inputs: Term & Definition */}
             <div style={inputsGridStyle}>
               <div style={inputGroupStyle}>
                 <input
@@ -186,32 +221,34 @@ export default function CreateSetForm({ onSetCreated, onCancel }: CreateSetFormP
         ))}
       </div>
 
-      {/* ➕ ADD CARD BUTTON (CENTERED) */}
+      {/* ➕ ADD CARD BUTTON */}
       <div style={addCardContainerStyle}>
         <button onClick={addCardRow} style={addCardBtnStyle}>
-          ➕ Magdagdag ng Card
+          ➕ Magdagdag ng Card Row
         </button>
       </div>
 
       {/* 💾 BOTTOM ACTION BAR */}
       <div style={bottomActionBarStyle}>
         <button onClick={handleSave} disabled={loading} style={maroonPrimaryBtnStyle}>
-          {loading ? 'Sina-save...' : 'Gumawa & I-save'}
+          {loading ? 'Sina-save...' : 'I-save ang Cards'}
         </button>
       </div>
     </div>
   );
 }
 
-// 🎨 WHITE & MAROON (#800000) STYLES
+// 🎨 STYLES
 const pageContainerStyle: React.CSSProperties = {
   maxWidth: '900px',
   margin: '0 auto',
   padding: '24px 16px',
   fontFamily: 'system-ui, -apple-system, sans-serif',
-  backgroundColor: '#fcfcfc',
+  backgroundColor: '#ffffff',
   color: '#1a1a1a',
   borderRadius: '16px',
+  boxShadow: '0 4px 15px rgba(0, 0, 0, 0.05)',
+  border: '1px solid #e2e8f0',
 };
 
 const headerStyle: React.CSSProperties = {
@@ -226,7 +263,7 @@ const headerStyle: React.CSSProperties = {
 const titleHeadingStyle: React.CSSProperties = {
   fontSize: '1.6rem',
   fontWeight: 800,
-  color: '#800000', // Maroon
+  color: '#800000',
   margin: 0,
 };
 
@@ -241,7 +278,7 @@ const headerBtnGroupStyle: React.CSSProperties = {
 };
 
 const maroonPrimaryBtnStyle: React.CSSProperties = {
-  backgroundColor: '#800000', // Maroon
+  backgroundColor: '#800000',
   color: '#ffffff',
   padding: '10px 20px',
   borderRadius: '8px',
@@ -250,7 +287,6 @@ const maroonPrimaryBtnStyle: React.CSSProperties = {
   fontSize: '0.9rem',
   cursor: 'pointer',
   boxShadow: '0 2px 8px rgba(128, 0, 0, 0.25)',
-  transition: 'background-color 0.2s',
 };
 
 const cancelBtnStyle: React.CSSProperties = {
@@ -269,6 +305,24 @@ const inputSectionStyle: React.CSSProperties = {
   flexDirection: 'column',
   gap: '12px',
   marginBottom: '28px',
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: '0.85rem',
+  fontWeight: 700,
+  color: '#4b5563',
+};
+
+const selectStyle: React.CSSProperties = {
+  padding: '12px 16px',
+  borderRadius: '10px',
+  border: '2px solid #800000',
+  fontSize: '1rem',
+  fontWeight: 700,
+  backgroundColor: '#ffffff',
+  color: '#800000',
+  cursor: 'pointer',
+  outline: 'none',
 };
 
 const titleInputStyle: React.CSSProperties = {
@@ -304,7 +358,7 @@ const cardRowStyle: React.CSSProperties = {
   borderRadius: '12px',
   padding: '16px 20px',
   border: '1px solid #e5e7eb',
-  borderTop: '4px solid #800000', // Maroon accent border
+  borderTop: '4px solid #800000',
   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04)',
 };
 
@@ -367,7 +421,7 @@ const addCardContainerStyle: React.CSSProperties = {
 
 const addCardBtnStyle: React.CSSProperties = {
   padding: '12px 28px',
-  backgroundColor: '#fff0f0', // Very light maroon tint
+  backgroundColor: '#fff0f0',
   color: '#800000',
   border: '2px dashed #800000',
   borderRadius: '10px',
