@@ -50,11 +50,11 @@ export default function Home() {
   return (
     <div style={pageWrapperStyle}>
       <main style={mainContainerStyle}>
-        {/* 🏷️ FULL WIDTH HEADER */}
+        {/* 🏷️ RESPONSIVE HEADER */}
         <header style={navHeaderStyle}>
           <div style={logoGroupStyle}>
             <h1 style={logoTitleStyle}>⚡ DLFlashcards</h1>
-            <span style={badgeStyle}>Desktop View</span>
+            <span style={badgeStyle}>Set Creator</span>
           </div>
           {!showCreateForm && (
             <button onClick={() => setShowCreateForm(true)} style={createSetBtnStyle}>
@@ -167,16 +167,17 @@ export default function Home() {
   );
 }
 
-// 🎨 EXPANDED DESKTOP STYLES (WHITE & MAROON)
+// 🎨 FULLY RESPONSIVE STYLES (PC & MOBILE)
 const pageWrapperStyle: React.CSSProperties = {
   minHeight: '100vh',
   backgroundColor: '#f8fafc',
-  padding: '32px 24px',
+  padding: '16px 12px', // Maliit na padding sa mobile para sakop ang buong screen
   boxSizing: 'border-box',
 };
 
 const mainContainerStyle: React.CSSProperties = {
-  maxWidth: '1200px', // Pinahaba mula sa mobile width
+  width: '100%',
+  maxWidth: '1200px', // Lalapad hanggang 1200px sa PC, pero kusa ring liliit sa mobile
   margin: '0 auto',
   fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   boxSizing: 'border-box',
@@ -186,8 +187,10 @@ const navHeaderStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  marginBottom: '28px',
-  padding: '20px 24px',
+  flexWrap: 'wrap', // Kusa bababa ang button kung masyadong makipot ang cellphone screen
+  gap: '12px',
+  marginBottom: '20px',
+  padding: '16px 20px',
   backgroundColor: '#ffffff',
   borderRadius: '16px',
   boxShadow: '0 4px 15px rgba(0, 0, 0, 0.05)',
@@ -197,13 +200,14 @@ const navHeaderStyle: React.CSSProperties = {
 const logoGroupStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  gap: '12px',
+  gap: '8px',
+  flexWrap: 'wrap',
 };
 
 const logoTitleStyle: React.CSSProperties = {
   color: '#800000',
   margin: 0,
-  fontSize: '1.8rem',
+  fontSize: '1.5rem',
   fontWeight: 800,
 };
 
@@ -212,17 +216,17 @@ const badgeStyle: React.CSSProperties = {
   color: '#800000',
   fontSize: '0.75rem',
   fontWeight: 700,
-  padding: '4px 10px',
+  padding: '3px 8px',
   borderRadius: '20px',
   border: '1px solid #800000',
 };
 
 const createSetBtnStyle: React.CSSProperties = {
-  padding: '12px 24px',
+  padding: '10px 18px',
   backgroundColor: '#800000',
   color: '#ffffff',
   fontWeight: 'bold',
-  fontSize: '0.95rem',
+  fontSize: '0.9rem',
   border: 'none',
   borderRadius: '10px',
   cursor: 'pointer',
@@ -231,74 +235,73 @@ const createSetBtnStyle: React.CSSProperties = {
 
 const sectionBoxStyle: React.CSSProperties = {
   backgroundColor: '#ffffff',
-  padding: '20px 24px',
+  padding: '16px',
   borderRadius: '16px',
-  marginBottom: '24px',
+  marginBottom: '20px',
   boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
   border: '1px solid #e2e8f0',
 };
 
 const folderLabelStyle: React.CSSProperties = {
-  fontSize: '0.9rem',
+  fontSize: '0.85rem',
   fontWeight: 700,
   color: '#475569',
   display: 'block',
-  marginBottom: '12px',
+  marginBottom: '10px',
 };
 
 const folderContainerStyle: React.CSSProperties = {
   display: 'flex',
-  gap: '10px',
-  flexWrap: 'wrap',
+  gap: '8px',
+  flexWrap: 'wrap', // Bababa ang tabs kapag marami nang folders sa mobile
   alignItems: 'center',
 };
 
 const folderTabStyle: React.CSSProperties = {
-  padding: '10px 20px',
-  fontSize: '0.9rem',
+  padding: '8px 16px',
+  fontSize: '0.85rem',
   fontWeight: 600,
   border: '1.5px solid #800000',
   borderRadius: '30px',
   cursor: 'pointer',
-  boxShadow: '0 2px 5px rgba(0,0,0,0.03)',
 };
 
 const tabContainerStyle: React.CSSProperties = {
   display: 'flex',
-  gap: '12px',
-  marginBottom: '28px',
-  justifyContent: 'flex-start',
+  gap: '10px',
+  marginBottom: '20px',
+  flexWrap: 'wrap',
 };
 
 const tabButtonStyle: React.CSSProperties = {
-  padding: '12px 24px',
-  fontSize: '0.95rem',
+  padding: '10px 18px',
+  fontSize: '0.9rem',
   fontWeight: 700,
   borderRadius: '10px',
   cursor: 'pointer',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+  flex: '1 1 auto', // Mag-e-expand sa mobile para pantay ang pindutan
+  textAlign: 'center',
 };
 
 const studyWrapperStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'center',
   width: '100%',
-  margin: '0 auto',
 };
 
 const responsiveGridStyle: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-  gap: '20px',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', // 280px para kasya agad kahit sa maliliit na phone (e.g. iPhone SE / Android)
+  gap: '16px',
   width: '100%',
 };
 
 const statusMessageStyle: React.CSSProperties = {
   backgroundColor: '#ffffff',
-  padding: '40px',
+  padding: '30px 16px',
   borderRadius: '16px',
   textAlign: 'center',
   color: '#475569',
-  fontSize: '1rem',
+  fontSize: '0.95rem',
   border: '1px solid #e2e8f0',
 };
