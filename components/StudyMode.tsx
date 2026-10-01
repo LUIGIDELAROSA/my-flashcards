@@ -163,7 +163,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
           >
             <span style={{ fontSize: '1.5rem' }}>✍️</span>
             <div>
-              <strong style={{ display: 'block', fontSize: '1.05rem' }}>Identification Mode</strong>
+              <strong style={{ display: 'block', fontSize: '1.05rem', color: 'black' }}>Identification Mode</strong>
               <small style={{ color: '#6b7280' }}>Type out your answer manually for each card</small>
             </div>
           </button>
@@ -174,7 +174,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
           >
             <span style={{ fontSize: '1.5rem' }}>🔘</span>
             <div>
-              <strong style={{ display: 'block', fontSize: '1.05rem' }}>Multiple Choice Mode</strong>
+              <strong style={{ display: 'block', fontSize: '1.05rem', color: 'black' }}>Multiple Choice Mode</strong>
               <small style={{ color: '#6b7280' }}>Select the correct answer from options</small>
             </div>
           </button>
