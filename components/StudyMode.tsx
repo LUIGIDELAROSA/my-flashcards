@@ -18,10 +18,23 @@ interface StudyModeProps {
   onRefresh?: () => void;
 }
 
+// 1. HELPER FUNCTION PARA MAG-SHUFFLE NG ARRAY (Fisher-Yates Shuffle)
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export default function StudyMode({ cards }: StudyModeProps) {
   // Session Mode State: 'setup' | 'active'
   const [sessionState, setSessionState] = useState<'setup' | 'active'>('setup');
   const [chosenMode, setChosenMode] = useState<'identification' | 'multiple_choice'>('identification');
+
+  // Shuffled Cards State
+  const [shuffledCards, setShuffledCards] = useState<FlashcardData[]>([]);
 
   // Quiz Navigation States
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -36,7 +49,8 @@ export default function StudyMode({ cards }: StudyModeProps) {
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
 
-  const currentCard = cards[currentIndex];
+  // Gamitin ang shuffledCards sa halip na ang orihinal na cards array
+  const currentCard = shuffledCards[currentIndex];
 
   useEffect(() => {
     restartQuiz();
@@ -46,27 +60,29 @@ export default function StudyMode({ cards }: StudyModeProps) {
     if (sessionState === 'active' && currentCard) {
       prepareOptionsForCurrentCard();
     }
-  }, [currentIndex, sessionState, chosenMode]);
+  }, [currentIndex, sessionState, chosenMode, shuffledCards]);
 
   // Generates Multiple Choice options if missing
   const prepareOptionsForCurrentCard = () => {
     if (!currentCard) return;
 
     if (currentCard.options && currentCard.options.length >= 2) {
-      setCurrentOptions([...currentCard.options].sort(() => 0.5 - Math.random()));
+      setCurrentOptions(shuffleArray(currentCard.options));
     } else {
       const otherAnswers = cards
         .map((c) => c.answer.trim())
         .filter((ans) => ans.toLowerCase() !== currentCard.answer.trim().toLowerCase());
-      
+
       const uniqueOthers = Array.from(new Set(otherAnswers));
-      const shuffledOthers = uniqueOthers.sort(() => 0.5 - Math.random()).slice(0, 3);
+      const shuffledOthers = shuffleArray(uniqueOthers).slice(0, 3);
       const combined = Array.from(new Set([currentCard.answer.trim(), ...shuffledOthers]));
-      setCurrentOptions(combined.sort(() => 0.5 - Math.random()));
+      setCurrentOptions(shuffleArray(combined));
     }
   };
 
+  // 2. I-shuffle ang cards tuwing magsisimula ng panibagong session
   const startSession = (mode: 'identification' | 'multiple_choice') => {
+    setShuffledCards(shuffleArray(cards)); // <-- Shuffle logic dito
     setChosenMode(mode);
     setSessionState('active');
     setCurrentIndex(0);
@@ -80,7 +96,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
   };
 
   const handleCheckAnswer = (answerToSubmit?: string) => {
-    if (hasAnswered) return;
+    if (hasAnswered || !currentCard) return;
 
     const answerToCheck = answerToSubmit ?? userInput;
     if (!answerToCheck.trim()) return;
@@ -99,7 +115,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
   };
 
   const handleNextCard = () => {
-    if (currentIndex + 1 < cards.length) {
+    if (currentIndex + 1 < shuffledCards.length) {
       setCurrentIndex((prev) => prev + 1);
       setIsFlipped(false);
       setUserInput('');
@@ -112,6 +128,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
   };
 
   const restartQuiz = () => {
+    setShuffledCards(shuffleArray(cards));
     setSessionState('setup');
     setCurrentIndex(0);
     setScore(0);
@@ -168,7 +185,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
 
   // 2️⃣ RESULT SUMMARY SCREEN
   if (showResult) {
-    const percentage = Math.round((score / cards.length) * 100);
+    const percentage = Math.round((score / shuffledCards.length) * 100);
     const isPassed = percentage >= 75;
 
     return (
@@ -183,7 +200,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
 
         <div style={scoreBoxStyle}>
           <span style={scoreTextStyle}>
-            {score} / {cards.length}
+            {score} / {shuffledCards.length}
           </span>
           <span style={percentageTextStyle}>({percentage}%)</span>
         </div>
@@ -214,7 +231,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
       {/* Header & Progress */}
       <div style={progressHeaderStyle}>
         <span style={progressTextStyle}>
-          Card {currentIndex + 1} of {cards.length}
+          Card {currentIndex + 1} of {shuffledCards.length}
         </span>
         <button onClick={restartQuiz} style={modeBadgeStyle} title="Click to change practice mode">
           Mode: <b>{chosenMode === 'multiple_choice' ? 'Multiple Choice 🔘' : 'Identification ✍️'}</b>
@@ -240,7 +257,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
           {isFlipped ? 'DEFINITION (ANSWER)' : 'QUESTION'}
         </span>
 
-        {!isFlipped && currentCard.image_url && (
+        {!isFlipped && currentCard?.image_url && (
           <div style={imageWrapperStyle}>
             <img
               src={currentCard.image_url}
@@ -251,7 +268,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
         )}
 
         <h2 style={cardContentStyle}>
-          {isFlipped ? currentCard.answer : currentCard.question}
+          {isFlipped ? currentCard?.answer : currentCard?.question}
         </h2>
 
         <span style={flipHintStyle}>
@@ -312,13 +329,13 @@ export default function StudyMode({ cards }: StudyModeProps) {
               <span>🎉 <b>Correct!</b> Well done!</span>
             ) : (
               <span>
-                ❌ <b>Incorrect.</b> The correct answer is: <b>{currentCard.answer}</b>
+                ❌ <b>Incorrect.</b> The correct answer is: <b>{currentCard?.answer}</b>
               </span>
             )}
           </div>
 
           <button onClick={handleNextCard} style={nextBtnStyle}>
-            {currentIndex + 1 === cards.length ? 'View Final Score 🏆' : 'Next Card ➡️'}
+            {currentIndex + 1 === shuffledCards.length ? 'View Final Score 🏆' : 'Next Card ➡️'}
           </button>
         </div>
       )}
@@ -359,7 +376,7 @@ const modeOptionBtnStyle: React.CSSProperties = {
   gap: '16px',
   padding: '16px 20px',
   borderRadius: '12px',
-  border: '2px solid #e5e7eb',
+  border: '2px solid #e5e5e5',
   backgroundColor: '#ffffff',
   cursor: 'pointer',
   textAlign: 'left',
@@ -463,28 +480,29 @@ const inputGroupStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   flex: 1,
-  padding: '16px 20px',          // Pinalaki ang padding
+  padding: '16px 20px',
   borderRadius: '12px',
-  border: '3px solid #800000',   // Makapal at kulay maroon na border
-  fontSize: '1.2rem',            // Mas malaking text
-  fontWeight: 'bold',            // Pinakapal na text (bold)
-  color: '#111827',              // Mas madilim na kulay para mas visible
+  border: '3px solid #800000',
+  fontSize: '1.2rem',
+  fontWeight: 'bold',
+  color: '#111827',
   backgroundColor: '#fdfbfb',
   outline: 'none',
-  boxShadow: '0 4px 6px rgba(0,0,0,0.05)', // Konting shadow para umangat
+  boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
 };
 
 const checkBtnStyle: React.CSSProperties = {
-  padding: '16px 24px',          // Pinalaki para pumantay sa input
+  padding: '16px 24px',
   backgroundColor: '#800000',
   color: '#ffffff',
   border: 'none',
   borderRadius: '12px',
   fontWeight: 800,
-  fontSize: '1.1rem',            // Mas malaking text sa button
+  fontSize: '1.1rem',
   cursor: 'pointer',
   boxShadow: '0 4px 6px rgba(128,0,0,0.2)',
 };
+
 const optionsGridStyle: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
