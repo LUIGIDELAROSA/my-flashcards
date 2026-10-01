@@ -75,11 +75,10 @@ export default function Home() {
   return (
     <div style={pageWrapperStyle}>
       <main style={mainContainerStyle}>
-        {/* Header */}
         <header style={navHeaderStyle}>
           <div style={logoGroupStyle}>
             <h1 style={logoTitleStyle}>⚡ DLFlashcards</h1>
-            <span style={badgeStyle}>Study Hub</span>
+            <span style={badgeStyle}>By Luigi Dela Rosa</span>
           </div>
           {!showCreateForm && (
             <button onClick={() => setShowCreateForm(true)} style={createSetBtnStyle}>
@@ -88,7 +87,6 @@ export default function Home() {
           )}
         </header>
 
-        {/* Create Set View */}
         {showCreateForm ? (
           <CreateSetForm
             folders={folders}
@@ -101,7 +99,6 @@ export default function Home() {
           />
         ) : (
           <>
-            {/* Folder Tabs Section */}
             <section style={sectionBoxStyle}>
               <span style={folderLabelStyle}>📁 Subject Folders:</span>
               <div style={folderContainerStyle}>
@@ -157,7 +154,6 @@ export default function Home() {
               </div>
             </section>
 
-            {/* Mode Switcher Bar */}
             <div style={actionHeaderStyle}>
               <div style={tabContainerStyle}>
                 <button
@@ -194,7 +190,6 @@ export default function Home() {
               )}
             </div>
 
-            {/* Main Content Area */}
             {loading ? (
               <div style={statusMessageStyle}>Loading flashcards...</div>
             ) : filteredCards.length === 0 ? (

@@ -19,22 +19,65 @@ interface StudyModeProps {
 }
 
 export default function StudyMode({ cards }: StudyModeProps) {
+  // Session Mode State: 'setup' | 'active'
+  const [sessionState, setSessionState] = useState<'setup' | 'active'>('setup');
+  const [chosenMode, setChosenMode] = useState<'identification' | 'multiple_choice'>('identification');
+
+  // Quiz Navigation States
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [userInput, setUserInput] = useState('');
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [currentOptions, setCurrentOptions] = useState<string[]>([]);
 
   // Scoring States
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
 
+  const currentCard = cards[currentIndex];
+
   useEffect(() => {
     restartQuiz();
   }, [cards]);
 
-  const currentCard = cards[currentIndex];
+  useEffect(() => {
+    if (sessionState === 'active' && currentCard) {
+      prepareOptionsForCurrentCard();
+    }
+  }, [currentIndex, sessionState, chosenMode]);
+
+  // Generates Multiple Choice options if missing
+  const prepareOptionsForCurrentCard = () => {
+    if (!currentCard) return;
+
+    if (currentCard.options && currentCard.options.length >= 2) {
+      setCurrentOptions([...currentCard.options].sort(() => 0.5 - Math.random()));
+    } else {
+      const otherAnswers = cards
+        .map((c) => c.answer.trim())
+        .filter((ans) => ans.toLowerCase() !== currentCard.answer.trim().toLowerCase());
+      
+      const uniqueOthers = Array.from(new Set(otherAnswers));
+      const shuffledOthers = uniqueOthers.sort(() => 0.5 - Math.random()).slice(0, 3);
+      const combined = Array.from(new Set([currentCard.answer.trim(), ...shuffledOthers]));
+      setCurrentOptions(combined.sort(() => 0.5 - Math.random()));
+    }
+  };
+
+  const startSession = (mode: 'identification' | 'multiple_choice') => {
+    setChosenMode(mode);
+    setSessionState('active');
+    setCurrentIndex(0);
+    setScore(0);
+    setIsFlipped(false);
+    setUserInput('');
+    setSelectedOption(null);
+    setHasAnswered(false);
+    setIsCorrect(null);
+    setShowResult(false);
+  };
 
   const handleCheckAnswer = (answerToSubmit?: string) => {
     if (hasAnswered) return;
@@ -69,6 +112,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
   };
 
   const restartQuiz = () => {
+    setSessionState('setup');
     setCurrentIndex(0);
     setScore(0);
     setIsFlipped(false);
@@ -80,9 +124,49 @@ export default function StudyMode({ cards }: StudyModeProps) {
   };
 
   if (!cards || cards.length === 0) {
-    return <div style={containerStyle}>No flashcards available in this set.</div>;
+    return <div style={containerStyle}>No flashcards available in this folder.</div>;
   }
 
+  // 1️⃣ PRE-PRACTICE MODE SELECTION SCREEN
+  if (sessionState === 'setup') {
+    return (
+      <div style={selectionBoxStyle}>
+        <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>🎯</div>
+        <h2 style={{ color: '#800000', margin: '0 0 8px 0', fontSize: '1.6rem' }}>
+          Choose Practice Mode
+        </h2>
+        <p style={{ color: '#4b5563', margin: '0 0 24px 0', fontSize: '0.95rem' }}>
+          Select how you want to answer questions for this practice session:
+        </p>
+
+        <div style={modeButtonGroupStyle}>
+          <button
+            onClick={() => startSession('identification')}
+            style={modeOptionBtnStyle}
+          >
+            <span style={{ fontSize: '1.5rem' }}>✍️</span>
+            <div>
+              <strong style={{ display: 'block', fontSize: '1.05rem' }}>Identification Mode</strong>
+              <small style={{ color: '#6b7280' }}>Type out your answer manually for each card</small>
+            </div>
+          </button>
+
+          <button
+            onClick={() => startSession('multiple_choice')}
+            style={modeOptionBtnStyle}
+          >
+            <span style={{ fontSize: '1.5rem' }}>🔘</span>
+            <div>
+              <strong style={{ display: 'block', fontSize: '1.05rem' }}>Multiple Choice Mode</strong>
+              <small style={{ color: '#6b7280' }}>Select the correct answer from options</small>
+            </div>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 2️⃣ RESULT SUMMARY SCREEN
   if (showResult) {
     const percentage = Math.round((score / cards.length) * 100);
     const isPassed = percentage >= 75;
@@ -112,18 +196,19 @@ export default function StudyMode({ cards }: StudyModeProps) {
             : 'Keep practicing to improve your score!'}
         </p>
 
-        <button onClick={restartQuiz} style={restartBtnStyle}>
-          🔄 Restart Session
-        </button>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button onClick={() => startSession(chosenMode)} style={restartBtnStyle}>
+            🔄 Retry Mode
+          </button>
+          <button onClick={restartQuiz} style={changeModeBtnStyle}>
+            ⚙️ Change Mode
+          </button>
+        </div>
       </div>
     );
   }
 
-  const isMultipleChoice = currentCard.card_type === 'multiple_choice';
-  const availableOptions = currentCard.options && currentCard.options.length > 0
-    ? currentCard.options
-    : [currentCard.answer];
-
+  // 3️⃣ ACTIVE PRACTICE SCREEN
   return (
     <div style={containerStyle}>
       {/* Header & Progress */}
@@ -131,9 +216,9 @@ export default function StudyMode({ cards }: StudyModeProps) {
         <span style={progressTextStyle}>
           Card {currentIndex + 1} of {cards.length}
         </span>
-        <span style={badgeStyle}>
-          Type: {isMultipleChoice ? 'Multiple Choice' : 'Identification'}
-        </span>
+        <button onClick={restartQuiz} style={modeBadgeStyle} title="Click to change practice mode">
+          Mode: <b>{chosenMode === 'multiple_choice' ? 'Multiple Choice 🔘' : 'Identification ✍️'}</b>
+        </button>
         <span style={liveScoreBadgeStyle}>
           Score: <b>{score}</b>
         </span>
@@ -155,12 +240,11 @@ export default function StudyMode({ cards }: StudyModeProps) {
           {isFlipped ? 'DEFINITION (ANSWER)' : 'QUESTION'}
         </span>
 
-        {/* Display Image if Available */}
         {!isFlipped && currentCard.image_url && (
           <div style={imageWrapperStyle}>
             <img
               src={currentCard.image_url}
-              alt="Question illustration"
+              alt="Question visual"
               style={imageStyle}
             />
           </div>
@@ -175,12 +259,12 @@ export default function StudyMode({ cards }: StudyModeProps) {
         </span>
       </div>
 
-      {/* Answer Area */}
+      {/* Answer Area based on chosen session mode */}
       {!hasAnswered ? (
         <div style={inputAreaStyle}>
-          {isMultipleChoice ? (
+          {chosenMode === 'multiple_choice' ? (
             <div style={optionsGridStyle}>
-              {availableOptions.map((option, idx) => (
+              {currentOptions.map((option, idx) => (
                 <button
                   key={idx}
                   onClick={() => {
@@ -252,6 +336,36 @@ const containerStyle: React.CSSProperties = {
   gap: '16px',
 };
 
+const selectionBoxStyle: React.CSSProperties = {
+  backgroundColor: '#ffffff',
+  borderRadius: '20px',
+  padding: '36px 24px',
+  textAlign: 'center',
+  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+  border: '2px solid #800000',
+  maxWidth: '520px',
+  margin: '0 auto',
+};
+
+const modeButtonGroupStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '12px',
+};
+
+const modeOptionBtnStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '16px',
+  padding: '16px 20px',
+  borderRadius: '12px',
+  border: '2px solid #e5e7eb',
+  backgroundColor: '#ffffff',
+  cursor: 'pointer',
+  textAlign: 'left',
+  transition: 'all 0.2s ease',
+};
+
 const progressHeaderStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
@@ -267,13 +381,14 @@ const progressTextStyle: React.CSSProperties = {
   color: '#6b7280',
 };
 
-const badgeStyle: React.CSSProperties = {
+const modeBadgeStyle: React.CSSProperties = {
   fontSize: '0.75rem',
-  fontWeight: 700,
-  color: '#4b5563',
-  backgroundColor: '#e5e7eb',
+  color: '#800000',
+  backgroundColor: '#fff0f0',
   padding: '4px 10px',
   borderRadius: '12px',
+  border: '1px solid #800000',
+  cursor: 'pointer',
 };
 
 const liveScoreBadgeStyle: React.CSSProperties = {
@@ -447,12 +562,23 @@ const percentageTextStyle: React.CSSProperties = {
 };
 
 const restartBtnStyle: React.CSSProperties = {
-  padding: '12px 28px',
+  padding: '12px 20px',
   backgroundColor: '#800000',
   color: '#ffffff',
   border: 'none',
   borderRadius: '10px',
   fontWeight: 800,
-  fontSize: '1rem',
+  fontSize: '0.9rem',
+  cursor: 'pointer',
+};
+
+const changeModeBtnStyle: React.CSSProperties = {
+  padding: '12px 20px',
+  backgroundColor: '#f3f4f6',
+  color: '#374151',
+  border: '1px solid #d1d5db',
+  borderRadius: '10px',
+  fontWeight: 700,
+  fontSize: '0.9rem',
   cursor: 'pointer',
 };

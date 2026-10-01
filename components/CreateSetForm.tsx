@@ -13,7 +13,7 @@ interface CardInput {
   id: string;
   card_type: 'identification' | 'multiple_choice';
   question: string;
-  image_url: string;
+  image_url: string; // Stores Base64 data string
   answer: string;
   option1: string;
   option2: string;
@@ -50,6 +50,7 @@ export default function CreateSetForm({
     },
   ]);
   const [loading, setLoading] = useState(false);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const addCardRow = () => {
     setCards((prev) => [
@@ -87,6 +88,29 @@ export default function CreateSetForm({
     });
   };
 
+  // Process File to Base64 Image
+  const processImageFile = (index: number, file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file!');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      handleCardChange(index, 'image_url', result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDropImage = (index: number, e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processImageFile(index, e.dataTransfer.files[0]);
+    }
+  };
+
   const handleSave = async () => {
     const validCards = cards.filter((c) => c.question.trim() && c.answer.trim());
     if (validCards.length === 0) {
@@ -97,7 +121,6 @@ export default function CreateSetForm({
     setLoading(true);
     let targetFolderId = selectedFolderId;
 
-    // Create new folder if 'new' selected
     if (selectedFolderId === 'new') {
       if (!newTitle.trim()) {
         alert('Please enter a Folder / Subject Title!');
@@ -120,7 +143,6 @@ export default function CreateSetForm({
       targetFolderId = folderData.id;
     }
 
-    // Prepare Cards for Insert
     const cardsToInsert = validCards.map((c) => {
       let optionsList: string[] = [];
 
@@ -129,7 +151,6 @@ export default function CreateSetForm({
           .map((opt) => opt.trim())
           .filter(Boolean);
         
-        // Combine answer + extra options
         optionsList = Array.from(new Set([c.answer.trim(), ...extraOptions]));
       }
 
@@ -159,13 +180,12 @@ export default function CreateSetForm({
 
   return (
     <div style={pageContainerStyle}>
-      {/* Header */}
       <div style={headerStyle}>
         <div>
           <h2 style={titleHeadingStyle}>
             {selectedFolderId === 'new' ? 'Create New Flashcard Set' : 'Add Cards to Folder'}
           </h2>
-          <span style={subHeadingStyle}>Configure options, images, and card types</span>
+          <span style={subHeadingStyle}>Drag and drop images or select flashcard types</span>
         </div>
         <div style={headerBtnGroupStyle}>
           {onCancel && (
@@ -179,7 +199,6 @@ export default function CreateSetForm({
         </div>
       </div>
 
-      {/* Folder Selection & Title */}
       <div style={inputSectionStyle}>
         <label style={labelStyle}>Select Target Folder:</label>
         <select
@@ -206,7 +225,6 @@ export default function CreateSetForm({
         )}
       </div>
 
-      {/* Cards List */}
       <div style={cardsListContainerStyle}>
         {cards.map((card, index) => (
           <div key={card.id} style={cardRowStyle}>
@@ -221,7 +239,6 @@ export default function CreateSetForm({
               </button>
             </div>
 
-            {/* Card Type Selector */}
             <div style={cardTypeRowStyle}>
               <label style={typeLabelStyle}>Card Mode:</label>
               <select
@@ -240,19 +257,58 @@ export default function CreateSetForm({
               </select>
             </div>
 
-            {/* Image URL Input */}
-            <div style={inputGroupStyle}>
-              <input
-                type="text"
-                placeholder="Image URL (optional e.g. https://example.com/image.png)"
-                value={card.image_url}
-                onChange={(e) => handleCardChange(index, 'image_url', e.target.value)}
-                style={cardInputStyle}
-              />
-              <span style={inputLabelStyle}>📷 QUESTION IMAGE URL (OPTIONAL)</span>
+            {/* 📷 DRAG AND DROP / CLICK IMAGE UPLOADER */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={inputLabelStyle}>📷 QUESTION IMAGE (DRAG & DROP OR CLICK)</span>
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOverIndex(index);
+                }}
+                onDragLeave={() => setDragOverIndex(null)}
+                onDrop={(e) => handleDropImage(index, e)}
+                onClick={() => document.getElementById(`file-input-${index}`)?.click()}
+                style={{
+                  ...dropZoneStyle,
+                  borderColor: dragOverIndex === index ? '#800000' : '#d1d5db',
+                  backgroundColor: dragOverIndex === index ? '#fff0f0' : '#f9fafb',
+                }}
+              >
+                <input
+                  id={`file-input-${index}`}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      processImageFile(index, e.target.files[0]);
+                    }
+                  }}
+                />
+
+                {card.image_url ? (
+                  <div style={previewContainerStyle}>
+                    <img src={card.image_url} alt="Uploaded preview" style={previewImageStyle} />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCardChange(index, 'image_url', '');
+                      }}
+                      style={removeImageBtnStyle}
+                    >
+                      ❌ Remove Image
+                    </button>
+                  </div>
+                ) : (
+                  <div style={dropTextContainerStyle}>
+                    <span style={{ fontSize: '1.4rem' }}>🖼️</span>
+                    <span><b>Drag & drop an image here</b> or click to select file</span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Main Question & Answer */}
             <div style={inputsGridStyle}>
               <div style={inputGroupStyle}>
                 <input
@@ -277,7 +333,6 @@ export default function CreateSetForm({
               </div>
             </div>
 
-            {/* Multiple Choice Extra Options */}
             {card.card_type === 'multiple_choice' && (
               <div style={extraOptionsContainerStyle}>
                 <span style={optionsTitleStyle}>Wrong Choice Options (Distractors):</span>
@@ -310,14 +365,12 @@ export default function CreateSetForm({
         ))}
       </div>
 
-      {/* Add Card Button */}
       <div style={addCardContainerStyle}>
         <button onClick={addCardRow} style={addCardBtnStyle}>
           ➕ Add Another Card
         </button>
       </div>
 
-      {/* Save Button */}
       <div style={bottomActionBarStyle}>
         <button onClick={handleSave} disabled={loading} style={primaryBtnStyle}>
           {loading ? 'Saving...' : 'Save Flashcards'}
@@ -486,6 +539,49 @@ const cardTypeSelectStyle: React.CSSProperties = {
   fontSize: '0.85rem',
   fontWeight: 600,
   backgroundColor: '#f9fafb',
+};
+
+const dropZoneStyle: React.CSSProperties = {
+  border: '2px dashed #d1d5db',
+  borderRadius: '10px',
+  padding: '16px',
+  textAlign: 'center',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
+};
+
+const dropTextContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '8px',
+  color: '#6b7280',
+  fontSize: '0.85rem',
+};
+
+const previewContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '8px',
+};
+
+const previewImageStyle: React.CSSProperties = {
+  maxHeight: '140px',
+  maxWidth: '100%',
+  borderRadius: '8px',
+  objectFit: 'contain',
+};
+
+const removeImageBtnStyle: React.CSSProperties = {
+  backgroundColor: '#fef2f2',
+  color: '#dc2626',
+  border: '1px solid #fecaca',
+  borderRadius: '6px',
+  padding: '4px 10px',
+  fontSize: '0.75rem',
+  fontWeight: 700,
+  cursor: 'pointer',
 };
 
 const inputsGridStyle: React.CSSProperties = {
