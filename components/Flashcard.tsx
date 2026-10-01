@@ -36,6 +36,19 @@ export default function Flashcard({
     }
   };
 
+  // Function para i-save ang in-edit na text sa database
+  const handleEdit = async (field: 'question' | 'answer', newValue: string) => {
+    if (!newValue.trim()) return;
+    const { error } = await supabase
+      .from('flashcards')
+      .update({ [field]: newValue })
+      .eq('id', id);
+      
+    if (error) {
+      alert('Error updating flashcard: ' + error.message);
+    }
+  };
+
   return (
     <div onClick={() => setIsFlipped(!isFlipped)} style={cardContainerStyle}>
       <div style={cardHeaderStyle}>
@@ -55,9 +68,19 @@ export default function Flashcard({
         </div>
       )}
 
-      <h3 style={contentStyle}>{isFlipped ? answer : question}</h3>
+      {/* Editable na Text (Question o Answer depende kung naka-flip) */}
+      <h3
+        contentEditable
+        suppressContentEditableWarning
+        onClick={(e) => e.stopPropagation()} // Pigilan mag-flip kapag nag-click para mag-type
+        onBlur={(e) => handleEdit(isFlipped ? 'answer' : 'question', e.currentTarget.textContent || '')}
+        style={editableContentStyle}
+        title="Click to edit text"
+      >
+        {isFlipped ? answer : question}
+      </h3>
 
-      <span style={hintStyle}>Click to flip card</span>
+      <span style={hintStyle}>Click anywhere on card (except text) to flip</span>
     </div>
   );
 }
@@ -120,13 +143,20 @@ const imageStyle: React.CSSProperties = {
   objectFit: 'contain',
 };
 
-const contentStyle: React.CSSProperties = {
-  fontSize: '1.1rem',
+const editableContentStyle: React.CSSProperties = {
+  fontSize: '1.2rem',
   fontWeight: 700,
   color: '#0f172a',
   margin: '12px 0',
+  padding: '8px',
+  border: '1px dashed transparent',
+  borderRadius: '8px',
+  cursor: 'text', // Ipinapakita na pwede i-type
+  transition: 'all 0.2s ease',
 };
 
+// Dinagdag sa CSS globally via style object kapag naka-focus (madadagdagan ng border)
+// Dahil inline styles gamit natin, maa-achieve ito manually pero ginawang transparent dashed border muna sa itaas.
 const hintStyle: React.CSSProperties = {
   fontSize: '0.7rem',
   color: '#94a3b8',

@@ -468,10 +468,10 @@ const selectStyle: React.CSSProperties = {
 };
 
 const titleInputStyle: React.CSSProperties = {
-  padding: '14px 16px',
+  padding: '16px 20px',
   borderRadius: '10px',
   border: '2px solid #e5e7eb',
-  fontSize: '1.1rem',
+  fontSize: '1.3rem',
   fontWeight: 600,
   backgroundColor: '#ffffff',
   outline: 'none',

@@ -457,28 +457,34 @@ const inputAreaStyle: React.CSSProperties = {
 
 const inputGroupStyle: React.CSSProperties = {
   display: 'flex',
-  gap: '8px',
+  gap: '10px',
+  width: '100%',
 };
 
 const inputStyle: React.CSSProperties = {
   flex: 1,
-  padding: '12px 16px',
-  borderRadius: '10px',
-  border: '1px solid #d1d5db',
-  fontSize: '0.95rem',
+  padding: '16px 20px',          // Pinalaki ang padding
+  borderRadius: '12px',
+  border: '3px solid #800000',   // Makapal at kulay maroon na border
+  fontSize: '1.2rem',            // Mas malaking text
+  fontWeight: 'bold',            // Pinakapal na text (bold)
+  color: '#111827',              // Mas madilim na kulay para mas visible
+  backgroundColor: '#fdfbfb',
   outline: 'none',
+  boxShadow: '0 4px 6px rgba(0,0,0,0.05)', // Konting shadow para umangat
 };
 
 const checkBtnStyle: React.CSSProperties = {
-  padding: '12px 20px',
+  padding: '16px 24px',          // Pinalaki para pumantay sa input
   backgroundColor: '#800000',
   color: '#ffffff',
   border: 'none',
-  borderRadius: '10px',
-  fontWeight: 700,
+  borderRadius: '12px',
+  fontWeight: 800,
+  fontSize: '1.1rem',            // Mas malaking text sa button
   cursor: 'pointer',
+  boxShadow: '0 4px 6px rgba(128,0,0,0.2)',
 };
-
 const optionsGridStyle: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
