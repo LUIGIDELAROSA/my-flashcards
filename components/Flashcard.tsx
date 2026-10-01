@@ -1,7 +1,6 @@
-// components/Flashcard.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
 interface FlashcardProps {
@@ -23,6 +22,16 @@ export default function Flashcard({
 }: FlashcardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
+  // 1. Gumamit tayo ng local state para ma-save at hindi mawala ang tinype mo agad sa screen
+  const [currentQuestion, setCurrentQuestion] = useState(question);
+  const [currentAnswer, setCurrentAnswer] = useState(answer);
+
+  // 2. Kapag nagbago ang data galing database (ex. nag-refresh ang app), i-sync natin dito
+  useEffect(() => {
+    setCurrentQuestion(question);
+    setCurrentAnswer(answer);
+  }, [question, answer]);
+
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     const confirmDelete = window.confirm('Are you sure you want to delete this flashcard?');
@@ -36,16 +45,28 @@ export default function Flashcard({
     }
   };
 
-  // Function para i-save ang in-edit na text sa database
   const handleEdit = async (field: 'question' | 'answer', newValue: string) => {
     if (!newValue.trim()) return;
+
+    // 3. I-update agad ang nakikita sa screen para kahit hindi mag-refresh, updated na siya
+    if (field === 'question') {
+      setCurrentQuestion(newValue);
+    } else {
+      setCurrentAnswer(newValue);
+    }
+
+    // 4. I-save sa Supabase Database
     const { error } = await supabase
       .from('flashcards')
       .update({ [field]: newValue })
       .eq('id', id);
-      
+
     if (error) {
-      alert('Error updating flashcard: ' + error.message);
+      console.error("Supabase Error:", error);
+      alert('Error saving edit: ' + error.message);
+    } else {
+      // 5. Tawagin ang onRefresh para alam ng buong website na may nagbago sa database
+      if (onRefresh) onRefresh();
     }
   };
 
@@ -68,16 +89,19 @@ export default function Flashcard({
         </div>
       )}
 
-      {/* Editable na Text (Question o Answer depende kung naka-flip) */}
+      {/* Dito natin pinalitan: Gamit na natin ngayon ang currentAnswer at currentQuestion */}
       <h3
         contentEditable
         suppressContentEditableWarning
-        onClick={(e) => e.stopPropagation()} // Pigilan mag-flip kapag nag-click para mag-type
-        onBlur={(e) => handleEdit(isFlipped ? 'answer' : 'question', e.currentTarget.textContent || '')}
+        onClick={(e) => e.stopPropagation()} // Pigilan mag-flip kapag kinlik para mag-type
+        onBlur={(e) => {
+          const newValue = e.currentTarget.textContent || '';
+          handleEdit(isFlipped ? 'answer' : 'question', newValue);
+        }}
         style={editableContentStyle}
         title="Click to edit text"
       >
-        {isFlipped ? answer : question}
+        {isFlipped ? currentAnswer : currentQuestion}
       </h3>
 
       <span style={hintStyle}>Click anywhere on card (except text) to flip</span>
@@ -85,6 +109,7 @@ export default function Flashcard({
   );
 }
 
+// MGA STYLES
 const cardContainerStyle: React.CSSProperties = {
   backgroundColor: '#ffffff',
   borderRadius: '12px',
@@ -149,14 +174,13 @@ const editableContentStyle: React.CSSProperties = {
   color: '#0f172a',
   margin: '12px 0',
   padding: '8px',
-  border: '1px dashed transparent',
+  border: '1px dashed transparent', // Invisible by default
   borderRadius: '8px',
-  cursor: 'text', // Ipinapakita na pwede i-type
+  cursor: 'text', // Nagiging parang text cursor
   transition: 'all 0.2s ease',
+  outline: 'none', // Para hindi pangit ang default outline
 };
 
-// Dinagdag sa CSS globally via style object kapag naka-focus (madadagdagan ng border)
-// Dahil inline styles gamit natin, maa-achieve ito manually pero ginawang transparent dashed border muna sa itaas.
 const hintStyle: React.CSSProperties = {
   fontSize: '0.7rem',
   color: '#94a3b8',
