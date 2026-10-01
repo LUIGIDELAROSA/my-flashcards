@@ -39,7 +39,7 @@ export default function Home() {
 
   return (
     <main style={mainContainerStyle}>
-      <h1>⚡ My Cloud Flashcards</h1>
+      <h1>DLFlashcards</h1>
 
       <AddFlashcardForm onCardAdded={fetchCards} />
 
