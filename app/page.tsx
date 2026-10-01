@@ -5,18 +5,11 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import Flashcard from '@/components/Flashcard';
 import CreateSetForm from '@/components/CreateSetForm';
-import StudyMode from '@/components/StudyMode';
+import StudyMode, { FlashcardData } from '@/components/StudyMode';
 
 interface Folder {
   id: string;
   name: string;
-}
-
-interface FlashcardData {
-  id: string;
-  question: string;
-  answer: string;
-  folder_id?: string;
 }
 
 export default function Home() {
@@ -30,8 +23,15 @@ export default function Home() {
   const fetchData = async () => {
     setLoading(true);
 
-    const { data: foldersData } = await supabase.from('folders').select('*').order('created_at', { ascending: true });
-    const { data: cardsData } = await supabase.from('flashcards').select('*').order('created_at', { ascending: false });
+    const { data: foldersData } = await supabase
+      .from('folders')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    const { data: cardsData } = await supabase
+      .from('flashcards')
+      .select('*')
+      .order('created_at', { ascending: false });
 
     setFolders(foldersData || []);
     setCards(cardsData || []);
@@ -42,10 +42,9 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // 🗑️ DELETE FOLDER FUNCTION
   const handleDeleteFolder = async (folderId: string, folderName: string) => {
     const confirmDelete = window.confirm(
-      `Sigurado ka bang gusto mong burahin ang folder na "${folderName}" pati ang lahat ng flashcards nito?`
+      `Are you sure you want to delete folder "${folderName}" and all its flashcards?`
     );
 
     if (!confirmDelete) return;
@@ -70,26 +69,26 @@ export default function Home() {
 
   const activeFolderName =
     selectedFolderId === 'all'
-      ? 'Lahat ng Sets'
+      ? 'All Sets'
       : folders.find((f) => f.id === selectedFolderId)?.name || 'Folder';
 
   return (
     <div style={pageWrapperStyle}>
       <main style={mainContainerStyle}>
-        {/* 🏷️ HEADER */}
+        {/* Header */}
         <header style={navHeaderStyle}>
           <div style={logoGroupStyle}>
             <h1 style={logoTitleStyle}>⚡ DLFlashcards</h1>
-            <span style={badgeStyle}>Desktop & Mobile</span>
+            <span style={badgeStyle}>Study Hub</span>
           </div>
           {!showCreateForm && (
             <button onClick={() => setShowCreateForm(true)} style={createSetBtnStyle}>
-              ➕ Gumawa / Magdagdag ng Set
+              ➕ Create / Add Flashcards
             </button>
           )}
         </header>
 
-        {/* CREATE SET FORM VIEW */}
+        {/* Create Set View */}
         {showCreateForm ? (
           <CreateSetForm
             folders={folders}
@@ -102,9 +101,9 @@ export default function Home() {
           />
         ) : (
           <>
-            {/* 📁 SUBJECT / FOLDER TABS SECTION */}
+            {/* Folder Tabs Section */}
             <section style={sectionBoxStyle}>
-              <span style={folderLabelStyle}>📁 Subject / Folders:</span>
+              <span style={folderLabelStyle}>📁 Subject Folders:</span>
               <div style={folderContainerStyle}>
                 <button
                   onClick={() => setSelectedFolderId('all')}
@@ -148,7 +147,7 @@ export default function Home() {
                           ...deleteFolderBtnStyle,
                           color: isSelected ? '#ffaaaa' : '#999999',
                         }}
-                        title="Burahin itong folder"
+                        title="Delete Folder"
                       >
                         🗑️
                       </button>
@@ -158,7 +157,7 @@ export default function Home() {
               </div>
             </section>
 
-            {/* 🎯 VIEW SWITCHER & ADD CARDS BAR */}
+            {/* Mode Switcher Bar */}
             <div style={actionHeaderStyle}>
               <div style={tabContainerStyle}>
                 <button
@@ -190,17 +189,17 @@ export default function Home() {
                   onClick={() => setShowCreateForm(true)}
                   style={addMoreToFolderBtnStyle}
                 >
-                  ➕ Magdagdag ng Cards sa "{activeFolderName}"
+                  ➕ Add Cards to "{activeFolderName}"
                 </button>
               )}
             </div>
 
-            {/* 🃏 MAIN CONTENT DISPLAY */}
+            {/* Main Content Area */}
             {loading ? (
-              <div style={statusMessageStyle}>Ikinakarga ang mga flashcards...</div>
+              <div style={statusMessageStyle}>Loading flashcards...</div>
             ) : filteredCards.length === 0 ? (
               <div style={statusMessageStyle}>
-                Wala pang flashcards sa folder na ito. I-click ang <b>"➕ Magdagdag ng Cards"</b> sa taas!
+                No flashcards in this folder yet. Click <b>"➕ Create / Add Flashcards"</b> to get started!
               </div>
             ) : mode === 'study' ? (
               <div style={studyWrapperStyle}>
@@ -214,6 +213,8 @@ export default function Home() {
                     id={card.id}
                     question={card.question}
                     answer={card.answer}
+                    imageUrl={card.image_url}
+                    cardType={card.card_type}
                     onRefresh={fetchData}
                   />
                 ))}
@@ -226,7 +227,7 @@ export default function Home() {
   );
 }
 
-// 🎨 RESPONSIVE STYLES
+// Styles
 const pageWrapperStyle: React.CSSProperties = {
   minHeight: '100vh',
   backgroundColor: '#f8fafc',
@@ -238,7 +239,7 @@ const mainContainerStyle: React.CSSProperties = {
   width: '100%',
   maxWidth: '1200px',
   margin: '0 auto',
-  fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  fontFamily: 'system-ui, -apple-system, sans-serif',
   boxSizing: 'border-box',
 };
 

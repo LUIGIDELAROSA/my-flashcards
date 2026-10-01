@@ -11,8 +11,13 @@ interface Folder {
 
 interface CardInput {
   id: string;
+  card_type: 'identification' | 'multiple_choice';
   question: string;
+  image_url: string;
   answer: string;
+  option1: string;
+  option2: string;
+  option3: string;
 }
 
 interface CreateSetFormProps {
@@ -32,32 +37,52 @@ export default function CreateSetForm({
     initialFolderId === 'all' ? 'new' : initialFolderId
   );
   const [newTitle, setNewTitle] = useState('');
-  const [description, setDescription] = useState('');
   const [cards, setCards] = useState<CardInput[]>([
-    { id: '1', question: '', answer: '' },
-    { id: '2', question: '', answer: '' },
+    {
+      id: '1',
+      card_type: 'identification',
+      question: '',
+      image_url: '',
+      answer: '',
+      option1: '',
+      option2: '',
+      option3: '',
+    },
   ]);
   const [loading, setLoading] = useState(false);
 
   const addCardRow = () => {
     setCards((prev) => [
       ...prev,
-      { id: Date.now().toString(), question: '', answer: '' },
+      {
+        id: Date.now().toString(),
+        card_type: 'identification',
+        question: '',
+        image_url: '',
+        answer: '',
+        option1: '',
+        option2: '',
+        option3: '',
+      },
     ]);
   };
 
   const removeCardRow = (index: number) => {
     if (cards.length <= 1) {
-      alert('Kailangan ng kahit isang flashcard sa set!');
+      alert('You must have at least one flashcard in the set!');
       return;
     }
     setCards((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleCardChange = (index: number, field: 'question' | 'answer', value: string) => {
+  const handleCardChange = (
+    index: number,
+    field: keyof CardInput,
+    value: string
+  ) => {
     setCards((prev) => {
       const updated = [...prev];
-      updated[index][field] = value;
+      updated[index] = { ...updated[index], [field]: value };
       return updated;
     });
   };
@@ -65,17 +90,17 @@ export default function CreateSetForm({
   const handleSave = async () => {
     const validCards = cards.filter((c) => c.question.trim() && c.answer.trim());
     if (validCards.length === 0) {
-      alert('Maglagay ng kahit isang kumpletong flashcard (Tanong at Sagot)!');
+      alert('Please fill out at least one flashcard with a Question and Answer!');
       return;
     }
 
     setLoading(true);
     let targetFolderId = selectedFolderId;
 
-    // 1. Kung "new" folder ang pinili, gagawa ng bagong folder record sa DB
+    // Create new folder if 'new' selected
     if (selectedFolderId === 'new') {
       if (!newTitle.trim()) {
-        alert('Mangyaring maglagay ng Title / Subject name!');
+        alert('Please enter a Folder / Subject Title!');
         setLoading(false);
         return;
       }
@@ -95,12 +120,28 @@ export default function CreateSetForm({
       targetFolderId = folderData.id;
     }
 
-    // 2. I-insert ang mga flashcards sa napiling folder ID
-    const cardsToInsert = validCards.map((c) => ({
-      question: c.question.trim(),
-      answer: c.answer.trim(),
-      folder_id: targetFolderId,
-    }));
+    // Prepare Cards for Insert
+    const cardsToInsert = validCards.map((c) => {
+      let optionsList: string[] = [];
+
+      if (c.card_type === 'multiple_choice') {
+        const extraOptions = [c.option1, c.option2, c.option3]
+          .map((opt) => opt.trim())
+          .filter(Boolean);
+        
+        // Combine answer + extra options
+        optionsList = Array.from(new Set([c.answer.trim(), ...extraOptions]));
+      }
+
+      return {
+        question: c.question.trim(),
+        answer: c.answer.trim(),
+        folder_id: targetFolderId,
+        card_type: c.card_type,
+        image_url: c.image_url.trim() || null,
+        options: optionsList,
+      };
+    });
 
     const { error: cardsError } = await supabase
       .from('flashcards')
@@ -112,46 +153,41 @@ export default function CreateSetForm({
       alert('Error saving flashcards: ' + cardsError.message);
     } else {
       setNewTitle('');
-      setDescription('');
-      setCards([
-        { id: '1', question: '', answer: '' },
-        { id: '2', question: '', answer: '' },
-      ]);
       onSetCreated();
     }
   };
 
   return (
     <div style={pageContainerStyle}>
-      {/* 🏷️ TOP HEADER */}
+      {/* Header */}
       <div style={headerStyle}>
         <div>
           <h2 style={titleHeadingStyle}>
-            {selectedFolderId === 'new' ? 'Gumawa ng Bagong Set' : 'Magdagdag ng Cards sa Folder'}
+            {selectedFolderId === 'new' ? 'Create New Flashcard Set' : 'Add Cards to Folder'}
           </h2>
-          <span style={subHeadingStyle}>Pumili ng folder at magdagdag ng mga card</span>
+          <span style={subHeadingStyle}>Configure options, images, and card types</span>
         </div>
         <div style={headerBtnGroupStyle}>
           {onCancel && (
             <button onClick={onCancel} style={cancelBtnStyle}>
-              Kanselahin
+              Cancel
             </button>
           )}
-          <button onClick={handleSave} disabled={loading} style={maroonPrimaryBtnStyle}>
-            {loading ? 'Sina-save...' : 'I-save ang Cards'}
+          <button onClick={handleSave} disabled={loading} style={primaryBtnStyle}>
+            {loading ? 'Saving...' : 'Save Flashcards'}
           </button>
         </div>
       </div>
 
-      {/* 📁 FOLDER SELECTOR & TITLE */}
+      {/* Folder Selection & Title */}
       <div style={inputSectionStyle}>
-        <label style={labelStyle}>Lagyan sa Folder:</label>
+        <label style={labelStyle}>Select Target Folder:</label>
         <select
           value={selectedFolderId}
           onChange={(e) => setSelectedFolderId(e.target.value)}
           style={selectStyle}
         >
-          <option value="new">➕ [ Gumawa ng Bagong Folder ]</option>
+          <option value="new">➕ [ Create New Folder ]</option>
           {folders.map((f) => (
             <option key={f.id} value={f.id}>
               📂 {f.name}
@@ -160,85 +196,138 @@ export default function CreateSetForm({
         </select>
 
         {selectedFolderId === 'new' && (
-          <>
-            <input
-              type="text"
-              placeholder="Title (e.g. Differential Equations, BOSH)"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              style={titleInputStyle}
-            />
-            <input
-              type="text"
-              placeholder="Add a description... (optional)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              style={descriptionInputStyle}
-            />
-          </>
+          <input
+            type="text"
+            placeholder="Folder / Subject Title (e.g. Biology 101)"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            style={titleInputStyle}
+          />
         )}
       </div>
 
-      {/* 🃏 FLASHCARD ROWS LIST */}
+      {/* Cards List */}
       <div style={cardsListContainerStyle}>
         {cards.map((card, index) => (
           <div key={card.id} style={cardRowStyle}>
             <div style={cardRowHeaderStyle}>
-              <span style={cardIndexStyle}>{index + 1}</span>
+              <span style={cardIndexStyle}>Card #{index + 1}</span>
               <button
                 onClick={() => removeCardRow(index)}
                 style={deleteRowBtnStyle}
-                title="Burahin itong card"
+                title="Remove Card"
               >
-                🗑️
+                🗑️ Delete Card
               </button>
             </div>
 
+            {/* Card Type Selector */}
+            <div style={cardTypeRowStyle}>
+              <label style={typeLabelStyle}>Card Mode:</label>
+              <select
+                value={card.card_type}
+                onChange={(e) =>
+                  handleCardChange(
+                    index,
+                    'card_type',
+                    e.target.value as 'identification' | 'multiple_choice'
+                  )
+                }
+                style={cardTypeSelectStyle}
+              >
+                <option value="identification">📝 Identification (Fill-in Answer)</option>
+                <option value="multiple_choice">🔘 Multiple Choice</option>
+              </select>
+            </div>
+
+            {/* Image URL Input */}
+            <div style={inputGroupStyle}>
+              <input
+                type="text"
+                placeholder="Image URL (optional e.g. https://example.com/image.png)"
+                value={card.image_url}
+                onChange={(e) => handleCardChange(index, 'image_url', e.target.value)}
+                style={cardInputStyle}
+              />
+              <span style={inputLabelStyle}>📷 QUESTION IMAGE URL (OPTIONAL)</span>
+            </div>
+
+            {/* Main Question & Answer */}
             <div style={inputsGridStyle}>
               <div style={inputGroupStyle}>
                 <input
                   type="text"
-                  placeholder="Enter term / tanong"
+                  placeholder="Enter Question / Term"
                   value={card.question}
                   onChange={(e) => handleCardChange(index, 'question', e.target.value)}
                   style={cardInputStyle}
                 />
-                <span style={inputLabelStyle}>TERM (TANONG)</span>
+                <span style={inputLabelStyle}>QUESTION / TERM</span>
               </div>
 
               <div style={inputGroupStyle}>
                 <input
                   type="text"
-                  placeholder="Enter definition / sagot"
+                  placeholder="Enter Correct Answer / Definition"
                   value={card.answer}
                   onChange={(e) => handleCardChange(index, 'answer', e.target.value)}
                   style={cardInputStyle}
                 />
-                <span style={inputLabelStyle}>DEFINITION (SAGOT)</span>
+                <span style={inputLabelStyle}>CORRECT ANSWER</span>
               </div>
             </div>
+
+            {/* Multiple Choice Extra Options */}
+            {card.card_type === 'multiple_choice' && (
+              <div style={extraOptionsContainerStyle}>
+                <span style={optionsTitleStyle}>Wrong Choice Options (Distractors):</span>
+                <div style={inputsGridStyle}>
+                  <input
+                    type="text"
+                    placeholder="Wrong Option 1"
+                    value={card.option1}
+                    onChange={(e) => handleCardChange(index, 'option1', e.target.value)}
+                    style={cardInputStyle}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Wrong Option 2"
+                    value={card.option2}
+                    onChange={(e) => handleCardChange(index, 'option2', e.target.value)}
+                    style={cardInputStyle}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Wrong Option 3"
+                    value={card.option3}
+                    onChange={(e) => handleCardChange(index, 'option3', e.target.value)}
+                    style={cardInputStyle}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
 
-      {/* ➕ ADD CARD BUTTON */}
+      {/* Add Card Button */}
       <div style={addCardContainerStyle}>
         <button onClick={addCardRow} style={addCardBtnStyle}>
-          ➕ Magdagdag ng Card Row
+          ➕ Add Another Card
         </button>
       </div>
 
-      {/* 💾 BOTTOM ACTION BAR */}
+      {/* Save Button */}
       <div style={bottomActionBarStyle}>
-        <button onClick={handleSave} disabled={loading} style={maroonPrimaryBtnStyle}>
-          {loading ? 'Sina-save...' : 'I-save ang Cards'}
+        <button onClick={handleSave} disabled={loading} style={primaryBtnStyle}>
+          {loading ? 'Saving...' : 'Save Flashcards'}
         </button>
       </div>
     </div>
   );
 }
 
-// 🎨 STYLES
+// Styles
 const pageContainerStyle: React.CSSProperties = {
   maxWidth: '900px',
   margin: '0 auto',
@@ -277,7 +366,7 @@ const headerBtnGroupStyle: React.CSSProperties = {
   gap: '10px',
 };
 
-const maroonPrimaryBtnStyle: React.CSSProperties = {
+const primaryBtnStyle: React.CSSProperties = {
   backgroundColor: '#800000',
   color: '#ffffff',
   padding: '10px 20px',
@@ -336,37 +425,29 @@ const titleInputStyle: React.CSSProperties = {
   color: '#111827',
 };
 
-const descriptionInputStyle: React.CSSProperties = {
-  padding: '12px 16px',
-  borderRadius: '10px',
-  border: '1px solid #e5e7eb',
-  fontSize: '0.95rem',
-  backgroundColor: '#ffffff',
-  outline: 'none',
-  color: '#4b5563',
-};
-
 const cardsListContainerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '16px',
+  gap: '20px',
   marginBottom: '24px',
 };
 
 const cardRowStyle: React.CSSProperties = {
   backgroundColor: '#ffffff',
   borderRadius: '12px',
-  padding: '16px 20px',
+  padding: '20px',
   border: '1px solid #e5e7eb',
   borderTop: '4px solid #800000',
   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04)',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '14px',
 };
 
 const cardRowHeaderStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  marginBottom: '12px',
   borderBottom: '1px solid #f3f4f6',
   paddingBottom: '8px',
 };
@@ -381,14 +462,36 @@ const deleteRowBtnStyle: React.CSSProperties = {
   background: 'none',
   border: 'none',
   cursor: 'pointer',
-  fontSize: '1rem',
-  opacity: 0.7,
+  fontSize: '0.85rem',
+  color: '#dc2626',
+  fontWeight: 600,
+};
+
+const cardTypeRowStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+};
+
+const typeLabelStyle: React.CSSProperties = {
+  fontSize: '0.8rem',
+  fontWeight: 700,
+  color: '#374151',
+};
+
+const cardTypeSelectStyle: React.CSSProperties = {
+  padding: '8px 12px',
+  borderRadius: '8px',
+  border: '1px solid #d1d5db',
+  fontSize: '0.85rem',
+  fontWeight: 600,
+  backgroundColor: '#f9fafb',
 };
 
 const inputsGridStyle: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-  gap: '16px',
+  gap: '12px',
 };
 
 const inputGroupStyle: React.CSSProperties = {
@@ -411,6 +514,21 @@ const inputLabelStyle: React.CSSProperties = {
   fontWeight: 700,
   color: '#6b7280',
   letterSpacing: '0.05em',
+};
+
+const extraOptionsContainerStyle: React.CSSProperties = {
+  backgroundColor: '#f9fafb',
+  padding: '12px',
+  borderRadius: '8px',
+  border: '1px dashed #d1d5db',
+};
+
+const optionsTitleStyle: React.CSSProperties = {
+  fontSize: '0.75rem',
+  fontWeight: 700,
+  color: '#4b5563',
+  display: 'block',
+  marginBottom: '8px',
 };
 
 const addCardContainerStyle: React.CSSProperties = {

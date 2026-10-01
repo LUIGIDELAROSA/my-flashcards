@@ -3,11 +3,14 @@
 
 import { useState, useEffect } from 'react';
 
-interface FlashcardData {
+export interface FlashcardData {
   id: string;
   question: string;
   answer: string;
   folder_id?: string;
+  card_type?: 'identification' | 'multiple_choice';
+  options?: string[];
+  image_url?: string;
 }
 
 interface StudyModeProps {
@@ -19,10 +22,11 @@ export default function StudyMode({ cards }: StudyModeProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [userInput, setUserInput] = useState('');
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  
-  // 📊 SCORING STATE
+
+  // Scoring States
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
 
@@ -32,29 +36,31 @@ export default function StudyMode({ cards }: StudyModeProps) {
 
   const currentCard = cards[currentIndex];
 
-  // I-check ang pinalo na sagot ng user
-  const handleCheckAnswer = () => {
-    if (!userInput.trim() || hasAnswered) return;
+  const handleCheckAnswer = (answerToSubmit?: string) => {
+    if (hasAnswered) return;
 
-    const formattedUserAns = userInput.trim().toLowerCase();
+    const answerToCheck = answerToSubmit ?? userInput;
+    if (!answerToCheck.trim()) return;
+
+    const formattedUserAns = answerToCheck.trim().toLowerCase();
     const formattedCorrectAns = currentCard.answer.trim().toLowerCase();
 
     const correct = formattedUserAns === formattedCorrectAns;
     setIsCorrect(correct);
     setHasAnswered(true);
-    setIsFlipped(true); // I-flip para makita ang tamang sagot
+    setIsFlipped(true);
 
     if (correct) {
       setScore((prev) => prev + 1);
     }
   };
 
-  // Lumipat sa Susunod na Card
   const handleNextCard = () => {
     if (currentIndex + 1 < cards.length) {
       setCurrentIndex((prev) => prev + 1);
       setIsFlipped(false);
       setUserInput('');
+      setSelectedOption(null);
       setHasAnswered(false);
       setIsCorrect(null);
     } else {
@@ -62,22 +68,21 @@ export default function StudyMode({ cards }: StudyModeProps) {
     }
   };
 
-  // I-restart ang Quiz
   const restartQuiz = () => {
     setCurrentIndex(0);
     setScore(0);
     setIsFlipped(false);
     setUserInput('');
+    setSelectedOption(null);
     setHasAnswered(false);
     setIsCorrect(null);
     setShowResult(false);
   };
 
   if (!cards || cards.length === 0) {
-    return <div style={containerStyle}>Walang flashcards sa set na ito.</div>;
+    return <div style={containerStyle}>No flashcards available in this set.</div>;
   }
 
-  // 🏆 RESULT / SCORE SUMMARY SCREEN
   if (showResult) {
     const percentage = Math.round((score / cards.length) * 100);
     const isPassed = percentage >= 75;
@@ -88,13 +93,10 @@ export default function StudyMode({ cards }: StudyModeProps) {
           {percentage === 100 ? '🎉🏆' : isPassed ? '👏' : '💪'}
         </div>
         <h2 style={{ color: '#800000', margin: '0 0 8px 0', fontSize: '1.8rem' }}>
-          Tapos na ang Study Session!
+          Session Completed!
         </h2>
-        <p style={{ color: '#4b5563', margin: '0 0 20px 0' }}>
-          Ito ang nakuha mong marka:
-        </p>
+        <p style={{ color: '#4b5563', margin: '0 0 20px 0' }}>Here is your final score:</p>
 
-        {/* SCORE BOX */}
         <div style={scoreBoxStyle}>
           <span style={scoreTextStyle}>
             {score} / {cards.length}
@@ -104,32 +106,40 @@ export default function StudyMode({ cards }: StudyModeProps) {
 
         <p style={{ fontWeight: 600, color: isPassed ? '#16a34a' : '#dc2626', marginBottom: '24px' }}>
           {percentage === 100
-            ? 'Perfect Score! Napakahusay!'
+            ? 'Perfect Score! Outstanding performance!'
             : isPassed
-            ? 'Magaling! Naisaulo mo ang karamihan!'
-            : 'Subukan ulit para mas tumatak sa isip!'}
+            ? 'Great job! You passed the session!'
+            : 'Keep practicing to improve your score!'}
         </p>
 
         <button onClick={restartQuiz} style={restartBtnStyle}>
-          🔄 Ulitin ang Session
+          🔄 Restart Session
         </button>
       </div>
     );
   }
 
+  const isMultipleChoice = currentCard.card_type === 'multiple_choice';
+  const availableOptions = currentCard.options && currentCard.options.length > 0
+    ? currentCard.options
+    : [currentCard.answer];
+
   return (
     <div style={containerStyle}>
-      {/* 📊 SCORE HEADER & PROGRESS */}
+      {/* Header & Progress */}
       <div style={progressHeaderStyle}>
         <span style={progressTextStyle}>
-          Card {currentIndex + 1} sa {cards.length}
+          Card {currentIndex + 1} of {cards.length}
+        </span>
+        <span style={badgeStyle}>
+          Type: {isMultipleChoice ? 'Multiple Choice' : 'Identification'}
         </span>
         <span style={liveScoreBadgeStyle}>
           Score: <b>{score}</b>
         </span>
       </div>
 
-      {/* 🃏 FLIP CARD DISPLAY */}
+      {/* Flashcard Container */}
       <div
         onClick={() => setIsFlipped(!isFlipped)}
         style={{
@@ -142,37 +152,69 @@ export default function StudyMode({ cards }: StudyModeProps) {
         }}
       >
         <span style={cardLabelStyle}>
-          {isFlipped ? 'DEFINITION (SAGOT)' : 'TERM (TANONG)'}
+          {isFlipped ? 'DEFINITION (ANSWER)' : 'QUESTION'}
         </span>
+
+        {/* Display Image if Available */}
+        {!isFlipped && currentCard.image_url && (
+          <div style={imageWrapperStyle}>
+            <img
+              src={currentCard.image_url}
+              alt="Question illustration"
+              style={imageStyle}
+            />
+          </div>
+        )}
 
         <h2 style={cardContentStyle}>
           {isFlipped ? currentCard.answer : currentCard.question}
         </h2>
 
         <span style={flipHintStyle}>
-          💡 I-click ang card para i-flip ({isFlipped ? 'Tanong' : 'Sagot'})
+          💡 Click card to flip ({isFlipped ? 'Show Question' : 'Show Answer'})
         </span>
       </div>
 
-      {/* 📝 INPUT & CHECK SECTION */}
+      {/* Answer Area */}
       {!hasAnswered ? (
         <div style={inputAreaStyle}>
-          <div style={inputGroupStyle}>
-            <input
-              type="text"
-              placeholder="I-type ang sagot mo..."
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
-              style={inputStyle}
-            />
-            <button onClick={handleCheckAnswer} style={checkBtnStyle}>
-              Suriin
-            </button>
-          </div>
+          {isMultipleChoice ? (
+            <div style={optionsGridStyle}>
+              {availableOptions.map((option, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setSelectedOption(option);
+                    handleCheckAnswer(option);
+                  }}
+                  style={{
+                    ...optionBtnStyle,
+                    backgroundColor: selectedOption === option ? '#800000' : '#ffffff',
+                    color: selectedOption === option ? '#ffffff' : '#1f2937',
+                  }}
+                >
+                  <span style={optionIndexStyle}>{String.fromCharCode(65 + idx)}.</span> {option}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div style={inputGroupStyle}>
+              <input
+                type="text"
+                placeholder="Type your answer here..."
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
+                style={inputStyle}
+              />
+              <button onClick={() => handleCheckAnswer()} style={checkBtnStyle}>
+                Submit
+              </button>
+            </div>
+          )}
         </div>
       ) : (
-        /* 💡 RESULT / NEXT BUTTON */
+        /* Feedback & Next Button */
         <div style={feedbackAreaStyle}>
           <div
             style={{
@@ -183,16 +225,16 @@ export default function StudyMode({ cards }: StudyModeProps) {
             }}
           >
             {isCorrect ? (
-              <span>🎉 <b>Tama!</b> Magaling!</span>
+              <span>🎉 <b>Correct!</b> Well done!</span>
             ) : (
               <span>
-                ❌ <b>Mali.</b> Ang tamang sagot ay: <b>{currentCard.answer}</b>
+                ❌ <b>Incorrect.</b> The correct answer is: <b>{currentCard.answer}</b>
               </span>
             )}
           </div>
 
           <button onClick={handleNextCard} style={nextBtnStyle}>
-            {currentIndex + 1 === cards.length ? 'Tingnan ang Score 🏆' : 'Sunod na Card ➡️'}
+            {currentIndex + 1 === cards.length ? 'View Final Score 🏆' : 'Next Card ➡️'}
           </button>
         </div>
       )}
@@ -200,7 +242,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
   );
 }
 
-// 🎨 STYLES
+// Styles
 const containerStyle: React.CSSProperties = {
   width: '100%',
   maxWidth: '600px',
@@ -215,12 +257,23 @@ const progressHeaderStyle: React.CSSProperties = {
   justifyContent: 'space-between',
   alignItems: 'center',
   padding: '0 4px',
+  flexWrap: 'wrap',
+  gap: '8px',
 };
 
 const progressTextStyle: React.CSSProperties = {
   fontSize: '0.9rem',
   fontWeight: 700,
   color: '#6b7280',
+};
+
+const badgeStyle: React.CSSProperties = {
+  fontSize: '0.75rem',
+  fontWeight: 700,
+  color: '#4b5563',
+  backgroundColor: '#e5e7eb',
+  padding: '4px 10px',
+  borderRadius: '12px',
 };
 
 const liveScoreBadgeStyle: React.CSSProperties = {
@@ -235,8 +288,8 @@ const liveScoreBadgeStyle: React.CSSProperties = {
 const cardContainerStyle: React.CSSProperties = {
   backgroundColor: '#ffffff',
   borderRadius: '16px',
-  padding: '40px 24px',
-  minHeight: '220px',
+  padding: '30px 24px',
+  minHeight: '240px',
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
@@ -256,11 +309,24 @@ const cardLabelStyle: React.CSSProperties = {
   letterSpacing: '0.08em',
 };
 
+const imageWrapperStyle: React.CSSProperties = {
+  margin: '12px 0',
+  maxHeight: '180px',
+  overflow: 'hidden',
+  borderRadius: '8px',
+};
+
+const imageStyle: React.CSSProperties = {
+  maxHeight: '180px',
+  maxWidth: '100%',
+  objectFit: 'contain',
+};
+
 const cardContentStyle: React.CSSProperties = {
-  fontSize: '1.5rem',
+  fontSize: '1.4rem',
   fontWeight: 700,
   color: '#111827',
-  margin: '16px 0',
+  margin: '12px 0',
 };
 
 const flipHintStyle: React.CSSProperties = {
@@ -296,6 +362,28 @@ const checkBtnStyle: React.CSSProperties = {
   borderRadius: '10px',
   fontWeight: 700,
   cursor: 'pointer',
+};
+
+const optionsGridStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+  gap: '10px',
+};
+
+const optionBtnStyle: React.CSSProperties = {
+  padding: '14px 18px',
+  borderRadius: '10px',
+  border: '1.5px solid #800000',
+  fontSize: '0.95rem',
+  fontWeight: 600,
+  textAlign: 'left',
+  cursor: 'pointer',
+  transition: 'background-color 0.15s ease',
+};
+
+const optionIndexStyle: React.CSSProperties = {
+  fontWeight: 800,
+  marginRight: '6px',
 };
 
 const feedbackAreaStyle: React.CSSProperties = {
