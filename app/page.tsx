@@ -42,6 +42,30 @@ export default function Home() {
     fetchData();
   }, []);
 
+  // 🗑️ DELETE FOLDER FUNCTION
+  const handleDeleteFolder = async (folderId: string, folderName: string) => {
+    const confirmDelete = window.confirm(
+      `Sigurado ka bang gusto mong burahin ang folder na "${folderName}" pati ang lahat ng flashcards nito?`
+    );
+
+    if (!confirmDelete) return;
+
+    // 1. Burahin muna ang cards sa ilalim ng folder
+    await supabase.from('flashcards').delete().eq('folder_id', folderId);
+
+    // 2. Burahin ang folder mismo
+    const { error } = await supabase.from('folders').delete().eq('id', folderId);
+
+    if (error) {
+      alert('Error deleting folder: ' + error.message);
+    } else {
+      if (selectedFolderId === folderId) {
+        setSelectedFolderId('all');
+      }
+      fetchData();
+    }
+  };
+
   const filteredCards =
     selectedFolderId === 'all'
       ? cards
@@ -50,11 +74,11 @@ export default function Home() {
   return (
     <div style={pageWrapperStyle}>
       <main style={mainContainerStyle}>
-        {/* 🏷️ RESPONSIVE HEADER */}
+        {/* 🏷️ HEADER */}
         <header style={navHeaderStyle}>
           <div style={logoGroupStyle}>
             <h1 style={logoTitleStyle}>⚡ DLFlashcards</h1>
-            <span style={badgeStyle}>Set Creator</span>
+            <span style={badgeStyle}>Desktop & Mobile</span>
           </div>
           {!showCreateForm && (
             <button onClick={() => setShowCreateForm(true)} style={createSetBtnStyle}>
@@ -74,7 +98,7 @@ export default function Home() {
           />
         ) : (
           <>
-            {/* 📁 SUBJECT / FOLDER TABS SECTION */}
+            {/* 📁 SUBJECT / FOLDER TABS SECTION WITH DELETE */}
             <section style={sectionBoxStyle}>
               <span style={folderLabelStyle}>📁 Subject / Folders:</span>
               <div style={folderContainerStyle}>
@@ -94,17 +118,37 @@ export default function Home() {
                   const isSelected = selectedFolderId === folder.id;
 
                   return (
-                    <button
+                    <div
                       key={folder.id}
-                      onClick={() => setSelectedFolderId(folder.id)}
                       style={{
-                        ...folderTabStyle,
+                        ...folderTabWrapperStyle,
                         backgroundColor: isSelected ? '#800000' : '#ffffff',
-                        color: isSelected ? '#ffffff' : '#800000',
+                        borderColor: '#800000',
                       }}
                     >
-                      📂 {folder.name} ({count})
-                    </button>
+                      <button
+                        onClick={() => setSelectedFolderId(folder.id)}
+                        style={{
+                          ...folderBtnStyle,
+                          color: isSelected ? '#ffffff' : '#800000',
+                        }}
+                      >
+                        📂 {folder.name} ({count})
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteFolder(folder.id, folder.name);
+                        }}
+                        style={{
+                          ...deleteFolderBtnStyle,
+                          color: isSelected ? '#ffaaaa' : '#999999',
+                        }}
+                        title="Burahin itong folder"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   );
                 })}
               </div>
@@ -167,17 +211,17 @@ export default function Home() {
   );
 }
 
-// 🎨 FULLY RESPONSIVE STYLES (PC & MOBILE)
+// 🎨 RESPONSIVE STYLES
 const pageWrapperStyle: React.CSSProperties = {
   minHeight: '100vh',
   backgroundColor: '#f8fafc',
-  padding: '16px 12px', // Maliit na padding sa mobile para sakop ang buong screen
+  padding: '16px 12px',
   boxSizing: 'border-box',
 };
 
 const mainContainerStyle: React.CSSProperties = {
   width: '100%',
-  maxWidth: '1200px', // Lalapad hanggang 1200px sa PC, pero kusa ring liliit sa mobile
+  maxWidth: '1200px',
   margin: '0 auto',
   fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   boxSizing: 'border-box',
@@ -187,7 +231,7 @@ const navHeaderStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  flexWrap: 'wrap', // Kusa bababa ang button kung masyadong makipot ang cellphone screen
+  flexWrap: 'wrap',
   gap: '12px',
   marginBottom: '20px',
   padding: '16px 20px',
@@ -253,7 +297,7 @@ const folderLabelStyle: React.CSSProperties = {
 const folderContainerStyle: React.CSSProperties = {
   display: 'flex',
   gap: '8px',
-  flexWrap: 'wrap', // Bababa ang tabs kapag marami nang folders sa mobile
+  flexWrap: 'wrap',
   alignItems: 'center',
 };
 
@@ -264,6 +308,32 @@ const folderTabStyle: React.CSSProperties = {
   border: '1.5px solid #800000',
   borderRadius: '30px',
   cursor: 'pointer',
+};
+
+const folderTabWrapperStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  border: '1.5px solid #800000',
+  borderRadius: '30px',
+  padding: '2px 8px 2px 12px',
+};
+
+const folderBtnStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  fontSize: '0.85rem',
+  fontWeight: 600,
+  cursor: 'pointer',
+  padding: '6px 0',
+};
+
+const deleteFolderBtnStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  fontSize: '0.85rem',
+  cursor: 'pointer',
+  padding: '4px',
+  marginLeft: '6px',
 };
 
 const tabContainerStyle: React.CSSProperties = {
@@ -279,7 +349,7 @@ const tabButtonStyle: React.CSSProperties = {
   fontWeight: 700,
   borderRadius: '10px',
   cursor: 'pointer',
-  flex: '1 1 auto', // Mag-e-expand sa mobile para pantay ang pindutan
+  flex: '1 1 auto',
   textAlign: 'center',
 };
 
@@ -291,7 +361,7 @@ const studyWrapperStyle: React.CSSProperties = {
 
 const responsiveGridStyle: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', // 280px para kasya agad kahit sa maliliit na phone (e.g. iPhone SE / Android)
+  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
   gap: '16px',
   width: '100%',
 };
