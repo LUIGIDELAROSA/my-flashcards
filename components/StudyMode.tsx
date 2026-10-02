@@ -480,27 +480,30 @@ const inputGroupStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   flex: 1,
-  padding: '16px 20px',
-  borderRadius: '12px',
-  border: '3px solid #800000',
-  fontSize: '1.2rem',
+  minWidth: 0, /* ESSENTIAL: Pinipigilan ang input na lumagpas sa screen */
+  padding: '12px 14px',
+  borderRadius: '10px',
+  border: '2px solid #800000',
+  fontSize: '1rem',
   fontWeight: 'bold',
   color: '#111827',
   backgroundColor: '#fdfbfb',
   outline: 'none',
-  boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+  boxSizing: 'border-box',
 };
 
 const checkBtnStyle: React.CSSProperties = {
-  padding: '16px 24px',
+  padding: '12px 18px',
   backgroundColor: '#800000',
   color: '#ffffff',
   border: 'none',
-  borderRadius: '12px',
+  borderRadius: '10px',
   fontWeight: 800,
-  fontSize: '1.1rem',
+  fontSize: '0.95rem',
   cursor: 'pointer',
-  boxShadow: '0 4px 6px rgba(128,0,0,0.2)',
+  whiteSpace: 'nowrap', /* Pinipigilan ang teksto na mapisa */
+  flexShrink: 0, /* Pinipigilan ang button na lumiliit/ma-squish */
+  boxShadow: '0 2px 6px rgba(128,0,0,0.2)',
 };
 
 const optionsGridStyle: React.CSSProperties = {
