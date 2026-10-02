@@ -81,7 +81,7 @@ export default function AIFlashcardGenerator({ onCardsGenerated, onClose }: AIFl
         {errorMsg && <p style={{ color: '#dc2626', fontSize: '0.85rem' }}>{errorMsg}</p>}
 
         {/* Buttons */}
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '16px' }}>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '16px', color: 'black' }}>
           <button onClick={onClose} disabled={isLoading} style={cancelBtnStyle}>
             Cancel
           </button>
@@ -144,7 +144,7 @@ const generateBtnStyle: React.CSSProperties = {
   borderRadius: '8px',
   border: 'none',
   backgroundColor: '#800000',
-  color: '#ffffff',
+  color: '#ffffff', 
   cursor: 'pointer',
   fontWeight: 700,
 };

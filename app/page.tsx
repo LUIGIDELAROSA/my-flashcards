@@ -303,21 +303,23 @@ export default function Home() {
           <div style={modalOverlayStyle}>
             <div style={modalContentStyle}>
               <h2 style={{ color: '#800000', marginTop: 0 }}>✨ AI Flashcard Generator</h2>
-              <p style={{ color: '#4b5563', fontSize: '0.85rem' }}>
+              <p style={{ color: '#374151', fontSize: '0.85rem', marginBottom: '16px' }}>
                 Upload a PDF or paste lecture notes to automatically generate flashcards in Supabase.
               </p>
 
               {/* Target Folder Selector */}
-              <div style={{ marginBottom: '12px' }}>
+              <div style={{ marginBottom: '14px' }}>
                 <label style={modalLabelStyle}>1. Select Target Folder:</label>
                 <select
                   value={aiTargetFolderId}
                   onChange={(e) => setAiTargetFolderId(e.target.value)}
                   style={modalSelectStyle}
                 >
-                  <option value="" disabled>-- Choose Folder --</option>
+                  <option value="" disabled style={{ color: '#6b7280' }}>
+                    -- Choose Folder --
+                  </option>
                   {folders.map((f) => (
-                    <option key={f.id} value={f.id}>
+                    <option key={f.id} value={f.id} style={{ color: '#111827', backgroundColor: '#ffffff' }}>
                       📂 {f.name}
                     </option>
                   ))}
@@ -325,17 +327,17 @@ export default function Home() {
               </div>
 
               {/* PDF Upload */}
-              <div style={{ marginBottom: '12px' }}>
+              <div style={{ marginBottom: '14px' }}>
                 <label style={modalLabelStyle}>2. Upload PDF / Text File:</label>
                 <input
                   type="file"
                   accept=".pdf,.txt"
                   onChange={(e) => setAiFile(e.target.files?.[0] || null)}
-                  style={{ fontSize: '0.85rem', width: '100%' }}
+                  style={modalFileInputStyle}
                 />
               </div>
 
-              <div style={{ textAlign: 'center', margin: '8px 0', color: '#9ca3af', fontSize: '0.8rem' }}>
+              <div style={{ textAlign: 'center', margin: '12px 0', color: '#4b5563', fontSize: '0.8rem', fontWeight: 600 }}>
                 — OR PASTE TEXT —
               </div>
 
@@ -348,10 +350,10 @@ export default function Home() {
                 style={modalTextareaStyle}
               />
 
-              {aiError && <p style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '8px' }}>{aiError}</p>}
+              {aiError && <p style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '8px', fontWeight: 600 }}>{aiError}</p>}
 
               {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
                 <button
                   onClick={() => setShowAiModal(false)}
                   disabled={aiLoading}
@@ -575,7 +577,7 @@ const modalOverlayStyle: React.CSSProperties = {
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  backgroundColor: 'rgba(0, 0, 0, 0.6)',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
@@ -591,48 +593,62 @@ const modalContentStyle: React.CSSProperties = {
   maxWidth: '480px',
   boxSizing: 'border-box',
   boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+  color: '#1f2937', // Base dark text color
 };
 
 const modalLabelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: '0.85rem',
   fontWeight: 700,
-  marginBottom: '4px',
-  color: '#374151',
+  marginBottom: '6px',
+  color: '#111827', // Bold dark text
 };
 
 const modalSelectStyle: React.CSSProperties = {
   width: '100%',
-  padding: '8px 12px',
+  padding: '10px 12px',
   borderRadius: '8px',
-  border: '1px solid #d1d5db',
-  fontSize: '0.85rem',
+  border: '1.5px solid #9ca3af',
+  fontSize: '0.9rem',
+  fontWeight: 500,
   outline: 'none',
+  color: '#111827', // Dark visible text for selected item
+  backgroundColor: '#ffffff', // Explicit white background
+};
+
+const modalFileInputStyle: React.CSSProperties = {
+  fontSize: '0.85rem',
+  width: '100%',
+  color: '#111827', // Dark visible text for file name & input
+  padding: '4px 0',
 };
 
 const modalTextareaStyle: React.CSSProperties = {
   width: '100%',
-  padding: '10px',
+  padding: '12px',
   borderRadius: '8px',
-  border: '1px solid #d1d5db',
-  fontSize: '0.85rem',
+  border: '1.5px solid #9ca3af',
+  fontSize: '0.9rem',
   boxSizing: 'border-box',
   outline: 'none',
   resize: 'vertical',
+  color: '#111827', // Dark crisp text while typing
+  backgroundColor: '#ffffff',
 };
 
 const modalCancelBtnStyle: React.CSSProperties = {
-  padding: '8px 14px',
+  padding: '10px 16px',
   borderRadius: '8px',
-  border: '1px solid #d1d5db',
+  border: '1px solid #9ca3af',
   backgroundColor: '#f3f4f6',
+  color: '#1f2937', // High contrast dark text for Cancel
   cursor: 'pointer',
   fontWeight: 600,
   fontSize: '0.85rem',
 };
 
 const modalSubmitBtnStyle: React.CSSProperties = {
-  padding: '8px 16px',
+  padding: '10px 18px',
   borderRadius: '8px',
   border: 'none',
   backgroundColor: '#800000',
