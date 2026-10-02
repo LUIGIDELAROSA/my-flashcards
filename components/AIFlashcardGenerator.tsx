@@ -16,7 +16,7 @@ export default function AIFlashcardGenerator({ onCardsGenerated, onClose }: AIFl
 
   const handleGenerate = async () => {
     if (!textInput.trim() && !selectedFile) {
-      setErrorMsg('Mag-paste ng text o mag-upload ng PDF file.');
+      setErrorMsg('Please paste text or upload a PDF file.');
       return;
     }
 
@@ -39,10 +39,10 @@ export default function AIFlashcardGenerator({ onCardsGenerated, onClose }: AIFl
         onCardsGenerated(data.cards);
         onClose();
       } else {
-        setErrorMsg(data.error || 'Nagkaroon ng problema sa pagbuo ng flashcards.');
+        setErrorMsg(data.error || 'An error occurred while generating flashcards.');
       }
     } catch (err) {
-      setErrorMsg('Hindi makakonekta sa server.');
+      setErrorMsg('Unable to connect to the server.');
     } finally {
       setIsLoading(false);
     }
@@ -53,12 +53,12 @@ export default function AIFlashcardGenerator({ onCardsGenerated, onClose }: AIFl
       <div style={modalContentStyle}>
         <h2 style={{ color: '#800000', marginTop: 0 }}>✨ AI Flashcard Generator</h2>
         <p style={{ color: '#4b5563', fontSize: '0.9rem' }}>
-          Mag-paste ng lecture notes o mag-upload ng PDF para awtomatikong gawan ng mga flashcards.
+          Paste lecture notes or upload a PDF to automatically generate flashcards.
         </p>
 
         {/* Text Area */}
         <textarea
-          placeholder="I-paste dito ang iyong lecture notes o paragraph..."
+          placeholder="Paste your lecture notes or text here..."
           value={textInput}
           onChange={(e) => setTextInput(e.target.value)}
           rows={6}
@@ -68,7 +68,7 @@ export default function AIFlashcardGenerator({ onCardsGenerated, onClose }: AIFl
         {/* File Upload */}
         <div style={{ margin: '12px 0' }}>
           <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px' }}>
-            O mag-upload ng PDF / Text File:
+            Or upload a PDF / Text File:
           </label>
           <input
             type="file"
@@ -86,7 +86,7 @@ export default function AIFlashcardGenerator({ onCardsGenerated, onClose }: AIFl
             Cancel
           </button>
           <button onClick={handleGenerate} disabled={isLoading} style={generateBtnStyle}>
-            {isLoading ? '⏳ Gumagawa...' : '🚀 Generate Flashcards'}
+            {isLoading ? '⏳ Generating...' : '🚀 Generate Flashcards'}
           </button>
         </div>
       </div>

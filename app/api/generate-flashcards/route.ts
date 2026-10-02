@@ -6,11 +6,11 @@ export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
   try {
-    // 1. I-check kung nababasa ba ang GEMINI_API_KEY
+    // 1. Check if GEMINI_API_KEY is available
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'Kulang sa GEMINI_API_KEY! Siguraduhing na-add ito sa Vercel Environment Variables at na-redeploy ang project.' },
+        { error: 'Missing GEMINI_API_KEY! Make sure it is added to Vercel Environment Variables and the project is redeployed.' },
         { status: 500 }
       );
     }
@@ -22,8 +22,7 @@ export async function POST(req: Request) {
 
     const contents: any[] = [];
 
-    // 2. Kapag may in-upload na PDF / Text File: Direct Base64 conversion
-    // Hindi na kailangan ng pdf-parse, direktang binabasa ng Gemini 2.5 Flash ang PDF!
+    // 2. If a PDF / Text File is uploaded: Direct Base64 conversion
     if (file) {
       const arrayBuffer = await file.arrayBuffer();
       const base64Data = Buffer.from(arrayBuffer).toString('base64');
@@ -36,21 +35,21 @@ export async function POST(req: Request) {
       });
     }
 
-    // 3. Kapag may in-input na Text Notes
+    // 3. If text notes are provided
     if (textInput && textInput.trim()) {
       contents.push({ text: `Notes/Text:\n${textInput}` });
     }
 
     if (contents.length === 0) {
-      return NextResponse.json({ error: 'Walang nahanap na text o file.' }, { status: 400 });
+      return NextResponse.json({ error: 'No text or file provided.' }, { status: 400 });
     }
 
-    // Direct Instruction sa Gemini
+    // Direct instruction for Gemini
     contents.push({
-      text: 'Suriin at basahin ang file/notes sa itaas. Gumawa ng 5 hanggang 15 na pinakamahalagang flashcard Question and Answer pairs batay sa nilalaman nito.',
+      text: 'Analyze and review the file/notes above. Create 5 to 15 of the most important flashcard Question and Answer pairs based on its content.',
     });
 
-    // 4. Call Gemini API gamit ang Structured JSON Schema
+    // 4. Call Gemini API using Structured JSON Schema
     const response = await ai.models.generateContent({
       model: 'gemini-3.8-flash', 
       contents: contents,
@@ -61,8 +60,8 @@ export async function POST(req: Request) {
           items: {
             type: Type.OBJECT,
             properties: {
-              question: { type: Type.STRING, description: 'Ang tanong batay sa notes' },
-              answer: { type: Type.STRING, description: 'Ang maikli at tumpak na sagot' },
+              question: { type: Type.STRING, description: 'The question based on the notes' },
+              answer: { type: Type.STRING, description: 'The concise and accurate answer' },
             },
             required: ['question', 'answer'],
           },
@@ -75,9 +74,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, cards: generatedCards });
   } catch (error: any) {
     console.error('Error generating flashcards:', error);
-    // Ibalik ang eksaktong mensahe ng error para hindi lang generic "500" ang lumabas
+    // Return the exact error message so it is not just a generic "500"
     return NextResponse.json(
-      { error: error.message || error.toString() || 'Bumagsak ang pagbuo ng flashcards.' },
+      { error: error.message || error.toString() || 'Flashcard generation failed.' },
       { status: 500 }
     );
   }

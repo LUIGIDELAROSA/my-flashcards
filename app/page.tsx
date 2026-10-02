@@ -70,15 +70,15 @@ export default function Home() {
     }
   };
 
-  // --- HANDLER SA PAG-GENERATE AT PAG-SAVE NG AI CARDS SA SUPABASE ---
+  // --- HANDLER FOR GENERATING AND SAVING AI CARDS TO SUPABASE ---
   const handleGenerateAiCards = async () => {
     if (!aiTextInput.trim() && !aiFile) {
-      setAiError('Mag-paste ng text/notes o mag-upload ng PDF file.');
+      setAiError('Please paste text/notes or upload a PDF file.');
       return;
     }
 
     if (!aiTargetFolderId) {
-      setAiError('Pumili muna ng target folder kung saan ilalagay ang cards.');
+      setAiError('Please select a target folder where the cards will be placed.');
       return;
     }
 
@@ -90,7 +90,7 @@ export default function Home() {
       if (aiTextInput) formData.append('text', aiTextInput);
       if (aiFile) formData.append('file', aiFile);
 
-      // 1. Tawagin ang API route na nagpro-process ng Gemini AI
+      // 1. Call the API route that processes Gemini AI
       const res = await fetch('/api/generate-flashcards', {
         method: 'POST',
         body: formData,
@@ -99,10 +99,10 @@ export default function Home() {
       const data = await res.json();
 
       if (!data.success || !data.cards) {
-        throw new Error(data.error || 'Bumagsak ang pag-generate ng cards.');
+        throw new Error(data.error || 'Flashcard generation failed.');
       }
 
-      // 2. I-format ang AI response para tumugma sa Supabase columns
+      // 2. Format the AI response to match Supabase columns
       const cardsToInsert = data.cards.map((c: { question: string; answer: string }) => ({
         folder_id: aiTargetFolderId,
         question: c.question,
@@ -110,7 +110,7 @@ export default function Home() {
         card_type: 'identification',
       }));
 
-      // 3. I-save agad sa Supabase Database
+      // 3. Save directly to Supabase Database
       const { error: insertError } = await supabase.from('flashcards').insert(cardsToInsert);
 
       if (insertError) {
@@ -122,9 +122,9 @@ export default function Home() {
       setAiTextInput('');
       setAiFile(null);
       await fetchData();
-      alert(`✨ Tagumpay! Nakagawa ng ${cardsToInsert.length} na AI Flashcards!`);
+      alert(`✨ Success! Created ${cardsToInsert.length} AI Flashcards!`);
     } catch (err: any) {
-      setAiError(err.message || 'Nagkaroon ng problema sa pagbuo ng flashcards.');
+      setAiError(err.message || 'An error occurred while generating flashcards.');
     } finally {
       setAiLoading(false);
     }
@@ -304,7 +304,7 @@ export default function Home() {
             <div style={modalContentStyle}>
               <h2 style={{ color: '#800000', marginTop: 0 }}>✨ AI Flashcard Generator</h2>
               <p style={{ color: '#4b5563', fontSize: '0.85rem' }}>
-                Mag-upload ng PDF o mag-paste ng lecture notes para kusa itong gawan ng mga flashcards sa Supabase.
+                Upload a PDF or paste lecture notes to automatically generate flashcards in Supabase.
               </p>
 
               {/* Target Folder Selector */}
@@ -336,12 +336,12 @@ export default function Home() {
               </div>
 
               <div style={{ textAlign: 'center', margin: '8px 0', color: '#9ca3af', fontSize: '0.8rem' }}>
-                — O MAG-PASTE NG TEXT —
+                — OR PASTE TEXT —
               </div>
 
               {/* Text Input */}
               <textarea
-                placeholder="I-paste dito ang iyong lecture notes / paragraph..."
+                placeholder="Paste your lecture notes / text here..."
                 value={aiTextInput}
                 onChange={(e) => setAiTextInput(e.target.value)}
                 rows={4}
