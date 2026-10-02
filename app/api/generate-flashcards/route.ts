@@ -52,7 +52,7 @@ export async function POST(req: Request) {
 
     // 4. Call Gemini API gamit ang Structured JSON Schema
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash', // o 'gemini-1.5-flash'
       contents: contents,
       config: {
         responseMimeType: 'application/json',
