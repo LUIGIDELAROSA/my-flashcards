@@ -46,12 +46,28 @@ export async function POST(req: Request) {
 
     // Direct instruction for Gemini
     contents.push({
-      text: 'Analyze and review the file/notes above. Create 5 to 15 of the most important flashcard Question and Answer pairs based on its content.',
+      text: `You are an expert academic tutor. Analyze the material provided above and generate 5 to 15 key Identification-type flashcards.
+
+      STRICT GUIDELINES FOR IDENTIFICATION FLASHCARDS:
+      1. QUESTION STYLE: Formulate clear, specific clues or definitions (e.g., "What term refers to...", "Which process describes...", "Who proposed..."). Avoid open-ended or generic questions.
+      2. ANSWER STYLE: The answer MUST be a short, precise target term, phrase, name, or concept (strictly 1 to 5 words). Do not include long explanations in the answer field.
+      3. COVERAGE: Focus on essential terms, definitions, key figures, dates, formulas, or core principles. Avoid trivial details.
+      4. NO DUPLICATES: Ensure each question tests a distinct term.
+
+      OUTPUT FORMAT:
+      Return ONLY a valid JSON array of objects. Do not wrap in markdown code blocks like \`\`\`json, and do not add introductory or concluding text.
+
+      [
+        {
+          "question": "What process do plants use to convert light energy into chemical energy?",
+          "answer": "Photosynthesis"
+        }
+      ]`,
     });
 
     // 4. Call Gemini API using Structured JSON Schema
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash', 
+      model: 'gemini-3.8-flash',
       contents: contents,
       config: {
         responseMimeType: 'application/json',
