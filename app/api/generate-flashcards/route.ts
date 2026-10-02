@@ -46,23 +46,26 @@ export async function POST(req: Request) {
 
     // Direct instruction for Gemini
     contents.push({
-      text: `You are an expert academic tutor. Analyze the material provided above and generate 5 to 15 key Identification-type flashcards.
+      text: `Analyze and review the uploaded document thoroughly.
 
-      STRICT GUIDELINES FOR IDENTIFICATION FLASHCARDS:
-      1. QUESTION STYLE: Formulate clear, specific clues or definitions (e.g., "What term refers to...", "Which process describes...", "Who proposed..."). Avoid open-ended or generic questions.
-      2. ANSWER STYLE: The answer MUST be a short, precise target term, phrase, name, or concept (strictly 1 to 5 words). Do not include long explanations in the answer field.
-      3. COVERAGE: Focus on essential terms, definitions, key figures, dates, formulas, or core principles. Avoid trivial details.
-      4. NO DUPLICATES: Ensure each question tests a distinct term.
+      Goal:
+      Create a comprehensive set of Identification-style flashcard Question and Answer pairs covering ALL major topics, key terms, definitions, principles, formulas, dates, and core concepts in the text. Ensure exhaustive coverage so no important topic or detail is omitted.
 
-      OUTPUT FORMAT:
-      Return ONLY a valid JSON array of objects. Do not wrap in markdown code blocks like \`\`\`json, and do not add introductory or concluding text.
+      Formatting & Style Instructions:
+      1. Question Style (Identification):
+        - Formulate questions that ask for exact terms, names, processes, or definitions (e.g., "What term refers to...", "What process is defined as...", "Who developed...").
+      2. Answer Style:
+        - Keep answers direct, precise, and concise (exact terms, short phrases, or single words). Avoid long explanatory paragraphs.
+      3. Quantity & Depth:
+        - Generate as many flashcard pairs as necessary to cover the ENTIRE document thoroughly without leaving out any key concepts.
 
+      Return ONLY a valid raw JSON array of objects without markdown formatting or introductory text, structured as follows:
       [
         {
-          "question": "What process do plants use to convert light energy into chemical energy?",
+          "question": "What term describes the process by which plants convert sunlight into energy?",
           "answer": "Photosynthesis"
         }
-      ]`,
+      ]`
     });
 
     // 4. Call Gemini API using Structured JSON Schema
