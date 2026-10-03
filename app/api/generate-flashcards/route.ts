@@ -68,9 +68,9 @@ Return ONLY a valid raw JSON array of objects structured as follows:
 ]`
     });
 
-    // 4. Call Gemini API using gemini-2.0-flash
+    // 4. Call Gemini API using gemini-3.8-flash
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-3.8-flash',
       contents: contents,
       config: {
         responseMimeType: 'application/json',
@@ -96,13 +96,14 @@ Return ONLY a valid raw JSON array of objects structured as follows:
 
     const errorMessage = error.message || error.toString() || '';
 
+    // Catch 429 Quota Exceeded / Rate Limits
     if (
       errorMessage.includes('429') ||
       errorMessage.includes('Quota exceeded') ||
       errorMessage.includes('RESOURCE_EXHAUSTED')
     ) {
       return NextResponse.json(
-        { error: 'Naabot na ang daily limit ng AI API. Pakisubok muli pagkalipas ng ilang oras.' },
+        { error: 'Daily AI generation limit reached. Please try again in a few hours or create a new API Key.' },
         { status: 429 }
       );
     }
