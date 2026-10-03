@@ -1,3 +1,4 @@
+// components/Flashcard.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,9 +8,10 @@ interface FlashcardProps {
   id: string;
   question: string;
   answer: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
   cardType?: 'identification' | 'multiple_choice';
   onRefresh?: () => void;
+  isDarkMode?: boolean; // 👈 Idinagdag para sa Dark Mode support
 }
 
 export default function Flashcard({
@@ -19,10 +21,11 @@ export default function Flashcard({
   imageUrl,
   cardType,
   onRefresh,
+  isDarkMode = false,
 }: FlashcardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
-  // 1. Gumamit tayo ng local state para ma-save at hindi mawala ang tinype mo agad sa screen
+  // 1. Local state para ma-save at hindi mawala ang tinype mo agad sa screen
   const [currentQuestion, setCurrentQuestion] = useState(question);
   const [currentAnswer, setCurrentAnswer] = useState(answer);
 
@@ -48,7 +51,7 @@ export default function Flashcard({
   const handleEdit = async (field: 'question' | 'answer', newValue: string) => {
     if (!newValue.trim()) return;
 
-    // 3. I-update agad ang nakikita sa screen para kahit hindi mag-refresh, updated na siya
+    // 3. I-update agad ang nakikita sa screen
     if (field === 'question') {
       setCurrentQuestion(newValue);
     } else {
@@ -62,18 +65,42 @@ export default function Flashcard({
       .eq('id', id);
 
     if (error) {
-      console.error("Supabase Error:", error);
+      console.error('Supabase Error:', error);
       alert('Error saving edit: ' + error.message);
     } else {
-      // 5. Tawagin ang onRefresh para alam ng buong website na may nagbago sa database
+      // 5. Tawagin ang onRefresh para mag-update ang buong app
       if (onRefresh) onRefresh();
     }
   };
 
+  // Dynamic Colors para sa Dark Mode at Light Mode
+  const theme = {
+    cardBg: isDarkMode ? '#1e293b' : '#ffffff',
+    text: isDarkMode ? '#f8fafc' : '#0f172a',
+    label: isDarkMode ? '#94a3b8' : '#64748b',
+    hint: isDarkMode ? '#64748b' : '#94a3b8',
+    border: isDarkMode ? '#334155' : '#e2e8f0',
+    badgeBg: isDarkMode ? '#3b1111' : '#fff0f0',
+    badgeText: isDarkMode ? '#ff8080' : '#800000',
+  };
+
   return (
-    <div onClick={() => setIsFlipped(!isFlipped)} style={cardContainerStyle}>
+    <div
+      onClick={() => setIsFlipped(!isFlipped)}
+      style={{
+        ...cardContainerStyle,
+        backgroundColor: theme.cardBg,
+        borderColor: theme.border,
+      }}
+    >
       <div style={cardHeaderStyle}>
-        <span style={typeBadgeStyle}>
+        <span
+          style={{
+            ...typeBadgeStyle,
+            backgroundColor: theme.badgeBg,
+            color: theme.badgeText,
+          }}
+        >
           {cardType === 'multiple_choice' ? 'Multiple Choice' : 'Identification'}
         </span>
         <button onClick={handleDelete} style={deleteBtnStyle} title="Delete Card">
@@ -81,7 +108,9 @@ export default function Flashcard({
         </button>
       </div>
 
-      <span style={labelStyle}>{isFlipped ? 'DEFINITION' : 'TERM'}</span>
+      <span style={{ ...labelStyle, color: theme.label }}>
+        {isFlipped ? 'DEFINITION' : 'TERM'}
+      </span>
 
       {!isFlipped && imageUrl && (
         <div style={imageContainerStyle}>
@@ -89,29 +118,33 @@ export default function Flashcard({
         </div>
       )}
 
-      {/* Dito natin pinalitan: Gamit na natin ngayon ang currentAnswer at currentQuestion */}
+      {/* Direct Inline Editable Question / Answer */}
       <h3
         contentEditable
         suppressContentEditableWarning
-        onClick={(e) => e.stopPropagation()} // Pigilan mag-flip kapag kinlik para mag-type
+        onClick={(e) => e.stopPropagation()} // Pigilan mag-flip habang nagta-type
         onBlur={(e) => {
           const newValue = e.currentTarget.textContent || '';
           handleEdit(isFlipped ? 'answer' : 'question', newValue);
         }}
-        style={editableContentStyle}
+        style={{
+          ...editableContentStyle,
+          color: theme.text,
+        }}
         title="Click to edit text"
       >
         {isFlipped ? currentAnswer : currentQuestion}
       </h3>
 
-      <span style={hintStyle}>Click anywhere on card (except text) to flip</span>
+      <span style={{ ...hintStyle, color: theme.hint }}>
+        Click anywhere on card (except text) to flip
+      </span>
     </div>
   );
 }
 
-// MGA STYLES
+// BASE STYLES
 const cardContainerStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
   borderRadius: '12px',
   padding: '20px',
   minHeight: '200px',
@@ -122,7 +155,7 @@ const cardContainerStyle: React.CSSProperties = {
   border: '1px solid #e2e8f0',
   boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
   position: 'relative',
-  transition: 'transform 0.15s ease',
+  transition: 'all 0.2s ease',
 };
 
 const cardHeaderStyle: React.CSSProperties = {
@@ -135,8 +168,6 @@ const cardHeaderStyle: React.CSSProperties = {
 const typeBadgeStyle: React.CSSProperties = {
   fontSize: '0.7rem',
   fontWeight: 700,
-  color: '#800000',
-  backgroundColor: '#fff0f0',
   padding: '2px 8px',
   borderRadius: '6px',
 };
@@ -151,7 +182,6 @@ const deleteBtnStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   fontSize: '0.7rem',
   fontWeight: 800,
-  color: '#64748b',
   marginTop: '8px',
 };
 
@@ -171,18 +201,16 @@ const imageStyle: React.CSSProperties = {
 const editableContentStyle: React.CSSProperties = {
   fontSize: '1.2rem',
   fontWeight: 700,
-  color: '#0f172a',
   margin: '12px 0',
   padding: '8px',
-  border: '1px dashed transparent', // Invisible by default
+  border: '1px dashed transparent',
   borderRadius: '8px',
-  cursor: 'text', // Nagiging parang text cursor
+  cursor: 'text',
   transition: 'all 0.2s ease',
-  outline: 'none', // Para hindi pangit ang default outline
+  outline: 'none',
 };
 
 const hintStyle: React.CSSProperties = {
   fontSize: '0.7rem',
-  color: '#94a3b8',
   textAlign: 'center',
 };

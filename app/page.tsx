@@ -452,6 +452,22 @@ export default function Home() {
             </div>
           </div>
         )}
+        // 1. Study Mode Call:
+        <StudyMode cards={filteredCards} onRefresh={fetchData} isDarkMode={isDarkMode} />
+
+        // 2. Flashcard Grid Call:
+        {filteredCards.map((card) => (
+          <Flashcard
+            key={card.id}
+            id={card.id}
+            question={card.question}
+            answer={card.answer}
+            imageUrl={card.image_url}
+            cardType={card.card_type}
+            onRefresh={fetchData}
+            isDarkMode={isDarkMode} // 👈 Idagdag ito
+          />
+        ))}
       </main>
     </div>
   );
