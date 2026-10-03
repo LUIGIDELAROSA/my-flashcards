@@ -67,8 +67,11 @@ export default function StudyMode({ cards }: StudyModeProps) {
     if (!currentCard) return;
 
     if (currentCard.options && currentCard.options.length >= 2) {
-      setCurrentOptions(shuffleArray(currentCard.options));
+      // 💡 FIX: Pinagsama natin ang TAMANG SAGOT at ang mga AI DISTRACTORS bago i-shuffle
+      const combined = Array.from(new Set([currentCard.answer.trim(), ...currentCard.options]));
+      setCurrentOptions(shuffleArray(combined));
     } else {
+      // Fallback kung walang AI options (lumang cards)
       const otherAnswers = cards
         .map((c) => c.answer.trim())
         .filter((ans) => ans.toLowerCase() !== currentCard.answer.trim().toLowerCase());

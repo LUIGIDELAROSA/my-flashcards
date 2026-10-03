@@ -138,10 +138,11 @@ export default function Home() {
       }
 
       // 2. Format the AI response to match Supabase columns
-      const cardsToInsert = data.cards.map((c: { question: string; answer: string }) => ({
+      const cardsToInsert = data.cards.map((c: { question: string; answer: string; options: string[] }) => ({
         folder_id: aiTargetFolderId,
         question: c.question,
         answer: c.answer,
+        options: c.options || [], 
         card_type: 'identification',
       }));
 

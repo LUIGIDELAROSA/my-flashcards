@@ -48,24 +48,23 @@ export async function POST(req: Request) {
     contents.push({
       text: `Analyze and review the uploaded document thoroughly.
 
-Goal:
-Create a comprehensive set of Identification-style flashcard Question and Answer pairs covering ALL major topics, key terms, definitions, principles, formulas, dates, and core concepts in the text. Ensure exhaustive coverage so no important topic or detail is omitted.
+      Goal:
+      Create a comprehensive set of flashcard Question and Answer pairs covering ALL major topics, key terms, definitions, principles, formulas, dates, and core concepts.
 
-Formatting & Style Instructions:
-1. Question Style (Identification):
-   - Formulate questions that ask for exact terms, names, processes, or definitions (e.g., "What term refers to...", "What process is defined as...", "Who developed...").
-2. Answer Style:
-   - Keep answers direct, precise, and concise (exact terms, short phrases, or single words). Avoid long explanatory paragraphs.
-3. Quantity & Depth:
-   - Generate as many flashcard pairs as necessary to cover the ENTIRE document thoroughly without leaving out any key concepts.
+      Formatting & Style Instructions:
+      1. Question Style: Formulate clear questions that ask for exact terms, names, or definitions.
+      2. Answer Style: Keep the correct answer direct and concise.
+      3. Distractors (Multiple Choice): For EACH question, generate exactly 3 plausible but INCORRECT options. These distractors must be highly related to the question to make the multiple-choice challenging. Do not use silly or obviously wrong answers.
+      4. Quantity & Depth: Cover the ENTIRE document thoroughly.
 
-Return ONLY a valid raw JSON array of objects structured as follows:
-[
-  {
-    "question": "What term describes the process by which plants convert sunlight into energy?",
-    "answer": "Photosynthesis"
-  }
-]`
+      Return ONLY a valid raw JSON array of objects structured as follows:
+      [
+        {
+          "question": "What term describes the process by which plants convert sunlight into energy?",
+          "answer": "Photosynthesis",
+          "options": ["Cellular Respiration", "Phototropism", "Transpiration"]
+        }
+      ]`
     });
 
     // 4. Call Gemini API using gemini-3.8-flash
@@ -79,10 +78,15 @@ Return ONLY a valid raw JSON array of objects structured as follows:
           items: {
             type: Type.OBJECT,
             properties: {
-              question: { type: Type.STRING, description: 'The identification question based on the notes' },
-              answer: { type: Type.STRING, description: 'The concise and exact answer' },
+              question: { type: Type.STRING },
+              answer: { type: Type.STRING },
+              options: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: 'Exactly 3 plausible but incorrect choices related to the question'
+              },
             },
-            required: ['question', 'answer'],
+            required: ['question', 'answer', 'options'],
           },
         },
       },
