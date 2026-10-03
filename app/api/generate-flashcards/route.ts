@@ -68,9 +68,9 @@ Return ONLY a valid raw JSON array of objects structured as follows:
 ]`
     });
 
-    // 4. Call Gemini API using gemini-1.5-flash (Standard model with high quota & PDF support)
+    // 4. Call Gemini API using gemini-2.0-flash
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.0-flash',
       contents: contents,
       config: {
         responseMimeType: 'application/json',
@@ -96,7 +96,6 @@ Return ONLY a valid raw JSON array of objects structured as follows:
 
     const errorMessage = error.message || error.toString() || '';
 
-    // Saluhin kapag lumagpas sa Quota / Rate Limit (Error 429)
     if (
       errorMessage.includes('429') ||
       errorMessage.includes('Quota exceeded') ||
