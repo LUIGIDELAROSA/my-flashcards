@@ -20,6 +20,41 @@ export default function Home() {
   const [mode, setMode] = useState<'study' | 'grid'>('study');
   const [showCreateForm, setShowCreateForm] = useState(false);
 
+  // --- DARK MODE STATE ---
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Load saved theme setting on initial render
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      setIsDarkMode(true);
+    } else if (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setIsDarkMode(true);
+    }
+  }, []);
+
+  // Toggle Dark Mode function
+  const toggleDarkMode = () => {
+    setIsDarkMode((prev) => {
+      const nextMode = !prev;
+      localStorage.setItem('theme', nextMode ? 'dark' : 'light');
+      return nextMode;
+    });
+  };
+
+  // Dynamic Theme Palette
+  const theme = {
+    bg: isDarkMode ? '#0f172a' : '#f8fafc',
+    cardBg: isDarkMode ? '#1e293b' : '#ffffff',
+    text: isDarkMode ? '#f8fafc' : '#1f2937',
+    subText: isDarkMode ? '#94a3b8' : '#475569',
+    border: isDarkMode ? '#334155' : '#e2e8f0',
+    inputBg: isDarkMode ? '#0f172a' : '#ffffff',
+    accentBg: isDarkMode ? '#3b1111' : '#fff0f0',
+    accentText: isDarkMode ? '#ff8080' : '#800000',
+    accentBorder: '#800000',
+  };
+
   // --- AI GENERATOR MODAL STATES ---
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiTextInput, setAiTextInput] = useState('');
@@ -147,16 +182,39 @@ export default function Home() {
       : folders.find((f) => f.id === selectedFolderId)?.name || 'Folder';
 
   return (
-    <div style={pageWrapperStyle}>
+    <div style={{ ...pageWrapperStyle, backgroundColor: theme.bg, color: theme.text }}>
       <main style={mainContainerStyle}>
-        <header style={navHeaderStyle}>
+        <header style={{ ...navHeaderStyle, backgroundColor: theme.cardBg, borderColor: theme.accentBorder }}>
           <div style={logoGroupStyle}>
             <h1 style={logoTitleStyle}>⚡ DLFlashcards</h1>
-            <span style={badgeStyle}>By Luigi Dela Rosa</span>
+            <span style={{ ...badgeStyle, backgroundColor: theme.accentBg, color: theme.accentText, borderColor: theme.accentBorder }}>
+              By Luigi Dela Rosa
+            </span>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* 🌙 DARK MODE TOGGLE BUTTON */}
+            <button
+              onClick={toggleDarkMode}
+              style={{
+                padding: '10px 14px',
+                borderRadius: '10px',
+                border: `1.5px solid ${theme.border}`,
+                backgroundColor: isDarkMode ? '#334155' : '#f1f5f9',
+                color: theme.text,
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {isDarkMode ? '☀️ Light' : '🌙 Dark'}
+            </button>
+
             {/* 🤖 AI GENERATOR BUTTON */}
-            <button onClick={openAiModalWithFolder} style={aiHeaderBtnStyle}>
+            <button
+              onClick={openAiModalWithFolder}
+              style={{ ...aiHeaderBtnStyle, backgroundColor: theme.accentBg, color: theme.accentText }}
+            >
               ✨ AI Auto-Generator (PDF)
             </button>
             {!showCreateForm && (
@@ -179,15 +237,16 @@ export default function Home() {
           />
         ) : (
           <>
-            <section style={sectionBoxStyle}>
-              <span style={folderLabelStyle}>📁 Subject Folders:</span>
+            <section style={{ ...sectionBoxStyle, backgroundColor: theme.cardBg, borderColor: theme.border }}>
+              <span style={{ ...folderLabelStyle, color: theme.subText }}>📁 Subject Folders:</span>
               <div style={folderContainerStyle}>
                 <button
                   onClick={() => setSelectedFolderId('all')}
                   style={{
                     ...folderTabStyle,
-                    backgroundColor: selectedFolderId === 'all' ? '#800000' : '#ffffff',
-                    color: selectedFolderId === 'all' ? '#ffffff' : '#800000',
+                    backgroundColor: selectedFolderId === 'all' ? '#800000' : theme.cardBg,
+                    color: selectedFolderId === 'all' ? '#ffffff' : theme.text,
+                    borderColor: '#800000',
                   }}
                 >
                   🌐 All Sets ({cards.length})
@@ -202,7 +261,7 @@ export default function Home() {
                       key={folder.id}
                       style={{
                         ...folderTabWrapperStyle,
-                        backgroundColor: isSelected ? '#800000' : '#ffffff',
+                        backgroundColor: isSelected ? '#800000' : theme.cardBg,
                         borderColor: '#800000',
                       }}
                     >
@@ -210,7 +269,7 @@ export default function Home() {
                         onClick={() => setSelectedFolderId(folder.id)}
                         style={{
                           ...folderBtnStyle,
-                          color: isSelected ? '#ffffff' : '#800000',
+                          color: isSelected ? '#ffffff' : theme.text,
                         }}
                       >
                         📂 {folder.name} ({count})
@@ -222,7 +281,7 @@ export default function Home() {
                         }}
                         style={{
                           ...deleteFolderBtnStyle,
-                          color: isSelected ? '#ffaaaa' : '#999999',
+                          color: isSelected ? '#ffaaaa' : theme.subText,
                         }}
                         title="Delete Folder"
                       >
@@ -240,9 +299,9 @@ export default function Home() {
                   onClick={() => setMode('study')}
                   style={{
                     ...tabButtonStyle,
-                    backgroundColor: mode === 'study' ? '#800000' : '#ffffff',
-                    color: mode === 'study' ? '#ffffff' : '#374151',
-                    border: mode === 'study' ? '2px solid #800000' : '1px solid #d1d5db',
+                    backgroundColor: mode === 'study' ? '#800000' : theme.cardBg,
+                    color: mode === 'study' ? '#ffffff' : theme.text,
+                    border: mode === 'study' ? '2px solid #800000' : `1px solid ${theme.border}`,
                   }}
                 >
                   🎯 Study Mode
@@ -251,9 +310,9 @@ export default function Home() {
                   onClick={() => setMode('grid')}
                   style={{
                     ...tabButtonStyle,
-                    backgroundColor: mode === 'grid' ? '#800000' : '#ffffff',
-                    color: mode === 'grid' ? '#ffffff' : '#374151',
-                    border: mode === 'grid' ? '2px solid #800000' : '1px solid #d1d5db',
+                    backgroundColor: mode === 'grid' ? '#800000' : theme.cardBg,
+                    color: mode === 'grid' ? '#ffffff' : theme.text,
+                    border: mode === 'grid' ? '2px solid #800000' : `1px solid ${theme.border}`,
                   }}
                 >
                   📋 View All ({filteredCards.length})
@@ -263,7 +322,11 @@ export default function Home() {
               {selectedFolderId !== 'all' && (
                 <button
                   onClick={() => setShowCreateForm(true)}
-                  style={addMoreToFolderBtnStyle}
+                  style={{
+                    ...addMoreToFolderBtnStyle,
+                    backgroundColor: theme.accentBg,
+                    color: theme.accentText,
+                  }}
                 >
                   ➕ Add Cards to "{activeFolderName}"
                 </button>
@@ -271,9 +334,11 @@ export default function Home() {
             </div>
 
             {loading ? (
-              <div style={statusMessageStyle}>Loading flashcards...</div>
+              <div style={{ ...statusMessageStyle, backgroundColor: theme.cardBg, color: theme.subText, borderColor: theme.border }}>
+                Loading flashcards...
+              </div>
             ) : filteredCards.length === 0 ? (
-              <div style={statusMessageStyle}>
+              <div style={{ ...statusMessageStyle, backgroundColor: theme.cardBg, color: theme.subText, borderColor: theme.border }}>
                 No flashcards in this folder yet. Click <b>"➕ Create / Add Flashcards"</b> or <b>"✨ AI Auto-Generator"</b> to get started!
               </div>
             ) : mode === 'study' ? (
@@ -301,25 +366,30 @@ export default function Home() {
         {/* --- 🤖 AI GENERATOR MODAL POPUP --- */}
         {showAiModal && (
           <div style={modalOverlayStyle}>
-            <div style={modalContentStyle}>
-              <h2 style={{ color: '#800000', marginTop: 0 }}>✨ AI Flashcard Generator</h2>
-              <p style={{ color: '#374151', fontSize: '0.85rem', marginBottom: '16px' }}>
+            <div style={{ ...modalContentStyle, backgroundColor: theme.cardBg, color: theme.text }}>
+              <h2 style={{ color: isDarkMode ? '#ff6b6b' : '#800000', marginTop: 0 }}>✨ AI Flashcard Generator</h2>
+              <p style={{ color: theme.subText, fontSize: '0.85rem', marginBottom: '16px' }}>
                 Upload a PDF or paste lecture notes to automatically generate flashcards in Supabase.
               </p>
 
               {/* Target Folder Selector */}
               <div style={{ marginBottom: '14px' }}>
-                <label style={modalLabelStyle}>1. Select Target Folder:</label>
+                <label style={{ ...modalLabelStyle, color: theme.text }}>1. Select Target Folder:</label>
                 <select
                   value={aiTargetFolderId}
                   onChange={(e) => setAiTargetFolderId(e.target.value)}
-                  style={modalSelectStyle}
+                  style={{
+                    ...modalSelectStyle,
+                    backgroundColor: theme.inputBg,
+                    color: theme.text,
+                    borderColor: theme.border,
+                  }}
                 >
-                  <option value="" disabled style={{ color: '#6b7280' }}>
+                  <option value="" disabled style={{ color: theme.subText }}>
                     -- Choose Folder --
                   </option>
                   {folders.map((f) => (
-                    <option key={f.id} value={f.id} style={{ color: '#111827', backgroundColor: '#ffffff' }}>
+                    <option key={f.id} value={f.id} style={{ color: theme.text, backgroundColor: theme.cardBg }}>
                       📂 {f.name}
                     </option>
                   ))}
@@ -328,16 +398,16 @@ export default function Home() {
 
               {/* PDF Upload */}
               <div style={{ marginBottom: '14px' }}>
-                <label style={modalLabelStyle}>2. Upload PDF / Text File:</label>
+                <label style={{ ...modalLabelStyle, color: theme.text }}>2. Upload PDF / Text File:</label>
                 <input
                   type="file"
                   accept=".pdf,.txt"
                   onChange={(e) => setAiFile(e.target.files?.[0] || null)}
-                  style={modalFileInputStyle}
+                  style={{ ...modalFileInputStyle, color: theme.text }}
                 />
               </div>
 
-              <div style={{ textAlign: 'center', margin: '12px 0', color: '#4b5563', fontSize: '0.8rem', fontWeight: 600 }}>
+              <div style={{ textAlign: 'center', margin: '12px 0', color: theme.subText, fontSize: '0.8rem', fontWeight: 600 }}>
                 — OR PASTE TEXT —
               </div>
 
@@ -347,7 +417,12 @@ export default function Home() {
                 value={aiTextInput}
                 onChange={(e) => setAiTextInput(e.target.value)}
                 rows={4}
-                style={modalTextareaStyle}
+                style={{
+                  ...modalTextareaStyle,
+                  backgroundColor: theme.inputBg,
+                  color: theme.text,
+                  borderColor: theme.border,
+                }}
               />
 
               {aiError && <p style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '8px', fontWeight: 600 }}>{aiError}</p>}
@@ -357,7 +432,12 @@ export default function Home() {
                 <button
                   onClick={() => setShowAiModal(false)}
                   disabled={aiLoading}
-                  style={modalCancelBtnStyle}
+                  style={{
+                    ...modalCancelBtnStyle,
+                    backgroundColor: isDarkMode ? '#334155' : '#f3f4f6',
+                    color: theme.text,
+                    borderColor: theme.border,
+                  }}
                 >
                   Cancel
                 </button>
@@ -380,9 +460,9 @@ export default function Home() {
 // Styles
 const pageWrapperStyle: React.CSSProperties = {
   minHeight: '100vh',
-  backgroundColor: '#f8fafc',
   padding: '16px 12px',
   boxSizing: 'border-box',
+  transition: 'background-color 0.2s ease, color 0.2s ease',
 };
 
 const mainContainerStyle: React.CSSProperties = {
@@ -401,7 +481,6 @@ const navHeaderStyle: React.CSSProperties = {
   gap: '12px',
   marginBottom: '20px',
   padding: '16px 20px',
-  backgroundColor: '#ffffff',
   borderRadius: '16px',
   boxShadow: '0 4px 15px rgba(0, 0, 0, 0.05)',
   borderLeft: '6px solid #800000',
@@ -422,8 +501,6 @@ const logoTitleStyle: React.CSSProperties = {
 };
 
 const badgeStyle: React.CSSProperties = {
-  backgroundColor: '#fff0f0',
-  color: '#800000',
   fontSize: '0.75rem',
   fontWeight: 700,
   padding: '3px 8px',
@@ -433,8 +510,6 @@ const badgeStyle: React.CSSProperties = {
 
 const aiHeaderBtnStyle: React.CSSProperties = {
   padding: '10px 16px',
-  backgroundColor: '#fff0f0',
-  color: '#800000',
   fontWeight: 'bold',
   fontSize: '0.85rem',
   border: '1.5px dashed #800000',
@@ -455,7 +530,6 @@ const createSetBtnStyle: React.CSSProperties = {
 };
 
 const sectionBoxStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
   padding: '16px',
   borderRadius: '16px',
   marginBottom: '20px',
@@ -466,7 +540,6 @@ const sectionBoxStyle: React.CSSProperties = {
 const folderLabelStyle: React.CSSProperties = {
   fontSize: '0.85rem',
   fontWeight: 700,
-  color: '#475569',
   display: 'block',
   marginBottom: '10px',
 };
@@ -538,8 +611,6 @@ const tabButtonStyle: React.CSSProperties = {
 
 const addMoreToFolderBtnStyle: React.CSSProperties = {
   padding: '10px 18px',
-  backgroundColor: '#fff0f0',
-  color: '#800000',
   border: '1px solid #800000',
   borderRadius: '10px',
   fontWeight: 700,
@@ -561,11 +632,9 @@ const responsiveGridStyle: React.CSSProperties = {
 };
 
 const statusMessageStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
   padding: '30px 16px',
   borderRadius: '16px',
   textAlign: 'center',
-  color: '#475569',
   fontSize: '0.95rem',
   border: '1px solid #e2e8f0',
 };
@@ -586,14 +655,12 @@ const modalOverlayStyle: React.CSSProperties = {
 };
 
 const modalContentStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
   borderRadius: '16px',
   padding: '24px',
   width: '100%',
   maxWidth: '480px',
   boxSizing: 'border-box',
   boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-  color: '#1f2937', // Base dark text color
 };
 
 const modalLabelStyle: React.CSSProperties = {
@@ -601,25 +668,20 @@ const modalLabelStyle: React.CSSProperties = {
   fontSize: '0.85rem',
   fontWeight: 700,
   marginBottom: '6px',
-  color: '#111827', // Bold dark text
 };
 
 const modalSelectStyle: React.CSSProperties = {
   width: '100%',
   padding: '10px 12px',
   borderRadius: '8px',
-  border: '1.5px solid #9ca3af',
   fontSize: '0.9rem',
   fontWeight: 500,
   outline: 'none',
-  color: '#111827', // Dark visible text for selected item
-  backgroundColor: '#ffffff', // Explicit white background
 };
 
 const modalFileInputStyle: React.CSSProperties = {
   fontSize: '0.85rem',
   width: '100%',
-  color: '#111827', // Dark visible text for file name & input
   padding: '4px 0',
 };
 
@@ -627,21 +689,15 @@ const modalTextareaStyle: React.CSSProperties = {
   width: '100%',
   padding: '12px',
   borderRadius: '8px',
-  border: '1.5px solid #9ca3af',
   fontSize: '0.9rem',
   boxSizing: 'border-box',
   outline: 'none',
   resize: 'vertical',
-  color: '#111827', // Dark crisp text while typing
-  backgroundColor: '#ffffff',
 };
 
 const modalCancelBtnStyle: React.CSSProperties = {
   padding: '10px 16px',
   borderRadius: '8px',
-  border: '1px solid #9ca3af',
-  backgroundColor: '#f3f4f6',
-  color: '#1f2937', // High contrast dark text for Cancel
   cursor: 'pointer',
   fontWeight: 600,
   fontSize: '0.85rem',
