@@ -48,29 +48,29 @@ export async function POST(req: Request) {
     contents.push({
       text: `Analyze and review the uploaded document thoroughly.
 
-      Goal:
-      Create a comprehensive set of Identification-style flashcard Question and Answer pairs covering ALL major topics, key terms, definitions, principles, formulas, dates, and core concepts in the text. Ensure exhaustive coverage so no important topic or detail is omitted.
+Goal:
+Create a comprehensive set of Identification-style flashcard Question and Answer pairs covering ALL major topics, key terms, definitions, principles, formulas, dates, and core concepts in the text. Ensure exhaustive coverage so no important topic or detail is omitted.
 
-      Formatting & Style Instructions:
-      1. Question Style (Identification):
-        - Formulate questions that ask for exact terms, names, processes, or definitions (e.g., "What term refers to...", "What process is defined as...", "Who developed...").
-      2. Answer Style:
-        - Keep answers direct, precise, and concise (exact terms, short phrases, or single words). Avoid long explanatory paragraphs.
-      3. Quantity & Depth:
-        - Generate as many flashcard pairs as necessary to cover the ENTIRE document thoroughly without leaving out any key concepts.
+Formatting & Style Instructions:
+1. Question Style (Identification):
+   - Formulate questions that ask for exact terms, names, processes, or definitions (e.g., "What term refers to...", "What process is defined as...", "Who developed...").
+2. Answer Style:
+   - Keep answers direct, precise, and concise (exact terms, short phrases, or single words). Avoid long explanatory paragraphs.
+3. Quantity & Depth:
+   - Generate as many flashcard pairs as necessary to cover the ENTIRE document thoroughly without leaving out any key concepts.
 
-      Return ONLY a valid raw JSON array of objects without markdown formatting or introductory text, structured as follows:
-      [
-        {
-          "question": "What term describes the process by which plants convert sunlight into energy?",
-          "answer": "Photosynthesis"
-        }
-      ]`
+Return ONLY a valid raw JSON array of objects structured as follows:
+[
+  {
+    "question": "What term describes the process by which plants convert sunlight into energy?",
+    "answer": "Photosynthesis"
+  }
+]`
     });
 
-    // 4. Call Gemini API using Structured JSON Schema
+    // 4. Call Gemini API using gemini-1.5-flash (Standard model with high quota & PDF support)
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: 'gemini-1.5-flash',
       contents: contents,
       config: {
         responseMimeType: 'application/json',
@@ -79,8 +79,8 @@ export async function POST(req: Request) {
           items: {
             type: Type.OBJECT,
             properties: {
-              question: { type: Type.STRING, description: 'The question based on the notes' },
-              answer: { type: Type.STRING, description: 'The concise and accurate answer' },
+              question: { type: Type.STRING, description: 'The identification question based on the notes' },
+              answer: { type: Type.STRING, description: 'The concise and exact answer' },
             },
             required: ['question', 'answer'],
           },
@@ -93,9 +93,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, cards: generatedCards });
   } catch (error: any) {
     console.error('Error generating flashcards:', error);
-    // Return the exact error message so it is not just a generic "500"
+
+    const errorMessage = error.message || error.toString() || '';
+
+    // Saluhin kapag lumagpas sa Quota / Rate Limit (Error 429)
+    if (
+      errorMessage.includes('429') ||
+      errorMessage.includes('Quota exceeded') ||
+      errorMessage.includes('RESOURCE_EXHAUSTED')
+    ) {
+      return NextResponse.json(
+        { error: 'Naabot na ang daily limit ng AI API. Pakisubok muli pagkalipas ng ilang oras.' },
+        { status: 429 }
+      );
+    }
+
     return NextResponse.json(
-      { error: error.message || error.toString() || 'Flashcard generation failed.' },
+      { error: errorMessage || 'Flashcard generation failed.' },
       { status: 500 }
     );
   }
