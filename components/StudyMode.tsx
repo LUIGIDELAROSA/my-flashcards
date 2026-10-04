@@ -118,6 +118,10 @@ export default function StudyMode({ cards }: StudyModeProps) {
   };
 
   const handleNextCard = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+
     if (currentIndex + 1 < shuffledCards.length) {
       setCurrentIndex((prev) => prev + 1);
       setIsFlipped(false);
@@ -141,6 +145,24 @@ export default function StudyMode({ cards }: StudyModeProps) {
     setHasAnswered(false);
     setIsCorrect(null);
     setShowResult(false);
+  };
+
+  // Function para basahin ang text
+  const handleSpeak = (text: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // 👈 Importante ito para hindi mag-flip ang card kapag kinlick mo ang speaker
+
+    if ('speechSynthesis' in window) {
+      // I-stop muna kung may nagsasalita pa para hindi magpatong-patong
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US'; // Pwede mong palitan depende sa language ng flashcards
+      utterance.rate = 0.9; // Medyo binagalan natin nang konti para mas clear
+
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert("Sorry, your browser doesn't support text-to-speech.");
+    }
   };
 
   if (!cards || cards.length === 0) {
@@ -212,8 +234,8 @@ export default function StudyMode({ cards }: StudyModeProps) {
           {percentage === 100
             ? 'Perfect Score! Outstanding performance!'
             : isPassed
-            ? 'Great job! You passed the session!'
-            : 'Keep practicing to improve your score!'}
+              ? 'Great job! You passed the session!'
+              : 'Keep practicing to improve your score!'}
         </p>
 
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
@@ -270,9 +292,18 @@ export default function StudyMode({ cards }: StudyModeProps) {
           </div>
         )}
 
-        <h2 style={cardContentStyle}>
-          {isFlipped ? currentCard?.answer : currentCard?.question}
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
+          <h2 style={cardContentStyle}>
+            {isFlipped ? currentCard?.answer : currentCard?.question}
+          </h2>
+          <button
+            onClick={(e) => handleSpeak(isFlipped ? (currentCard?.answer || '') : (currentCard?.question || ''), e)}
+            style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}
+            title={isFlipped ? "Listen to answer" : "Listen to question"}
+          >
+            🔊
+          </button>
+        </div>
 
         <span style={flipHintStyle}>
           💡 Click card to flip ({isFlipped ? 'Show Question' : 'Show Answer'})
@@ -345,6 +376,8 @@ export default function StudyMode({ cards }: StudyModeProps) {
     </div>
   );
 }
+
+
 
 // Styles
 const containerStyle: React.CSSProperties = {
