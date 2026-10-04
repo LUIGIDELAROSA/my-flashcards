@@ -85,25 +85,25 @@ export default function Home() {
     fetchData();
   }, []);
 
-  const handleDeleteFolder = async (folderId: string, folderName: string) => {
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete folder "${folderName}" and all its flashcards?`
-    );
+  // const handleDeleteFolder = async (folderId: string, folderName: string) => {
+  //   const confirmDelete = window.confirm(
+  //     `Are you sure you want to delete folder "${folderName}" and all its flashcards?`
+  //   );
 
-    if (!confirmDelete) return;
+  //   if (!confirmDelete) return;
 
-    await supabase.from('flashcards').delete().eq('folder_id', folderId);
-    const { error } = await supabase.from('folders').delete().eq('id', folderId);
+  //   await supabase.from('flashcards').delete().eq('folder_id', folderId);
+  //   const { error } = await supabase.from('folders').delete().eq('id', folderId);
 
-    if (error) {
-      alert('Error deleting folder: ' + error.message);
-    } else {
-      if (selectedFolderId === folderId) {
-        setSelectedFolderId('all');
-      }
-      fetchData();
-    }
-  };
+  //   if (error) {
+  //     alert('Error deleting folder: ' + error.message);
+  //   } else {
+  //     if (selectedFolderId === folderId) {
+  //       setSelectedFolderId('all');
+  //     }
+  //     fetchData();
+  //   }
+  // };
 
   // --- HANDLER FOR GENERATING AND SAVING AI CARDS TO SUPABASE ---
   const handleGenerateAiCards = async () => {
@@ -253,7 +253,7 @@ export default function Home() {
                   🌐 All Sets ({cards.length})
                 </button>
 
-                {folders.map((folder) => {
+                {/* {folders.map((folder) => {
                   const count = cards.filter((c) => c.folder_id === folder.id).length;
                   const isSelected = selectedFolderId === folder.id;
 
@@ -290,7 +290,7 @@ export default function Home() {
                       </button>
                     </div>
                   );
-                })}
+                })} */}
               </div>
             </section>
 
@@ -578,14 +578,14 @@ const folderBtnStyle: React.CSSProperties = {
   padding: '6px 0',
 };
 
-const deleteFolderBtnStyle: React.CSSProperties = {
-  background: 'none',
-  border: 'none',
-  fontSize: '0.85rem',
-  cursor: 'pointer',
-  padding: '4px',
-  marginLeft: '6px',
-};
+// const deleteFolderBtnStyle: React.CSSProperties = {
+//   background: 'none',
+//   border: 'none',
+//   fontSize: '0.85rem',
+//   cursor: 'pointer',
+//   padding: '4px',
+//   marginLeft: '6px',
+// };
 
 const actionHeaderStyle: React.CSSProperties = {
   display: 'flex',
