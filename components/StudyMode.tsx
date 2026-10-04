@@ -149,16 +149,28 @@ export default function StudyMode({ cards }: StudyModeProps) {
 
   // Function para basahin ang text
   const handleSpeak = (text: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // 👈 Importante ito para hindi mag-flip ang card kapag kinlick mo ang speaker
+    e.stopPropagation();
 
     if ('speechSynthesis' in window) {
-      // I-stop muna kung may nagsasalita pa para hindi magpatong-patong
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US'; // Pwede mong palitan depende sa language ng flashcards
-      utterance.rate = 0.9; // Medyo binagalan natin nang konti para mas clear
 
+      // 💡 1. Kunin ang listahan ng available voices sa browser
+      const voices = window.speechSynthesis.getVoices();
+
+      // 💡 2. Humanap ng gustong boses (halimbawa: British Accent o Google Voice)
+      const preferredVoice = voices.find(
+        (v) => v.lang === 'en-GB' || v.name.includes('Google') || v.name.includes('Samantha')
+      );
+
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      } else {
+        utterance.lang = 'en-US'; // Fallback kung wala ang preferred voice
+      }
+
+      utterance.rate = 0.9;
       window.speechSynthesis.speak(utterance);
     } else {
       alert("Sorry, your browser doesn't support text-to-speech.");
