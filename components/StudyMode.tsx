@@ -161,7 +161,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
 
       // 💡 2. Humanap ng gustong boses (halimbawa: British Accent o Google Voice)
       const preferredVoice = voices.find(
-        (v) => v.lang === 'en-GB' || v.name.includes('Google') || v.name.includes('Samantha')
+        (v) => v.lang === 'en-PH' || v.name.includes('Google') || v.name.includes('Samantha')
       );
 
       if (preferredVoice) {
