@@ -253,7 +253,7 @@ export default function Home() {
                   🌐 All Sets ({cards.length})
                 </button>
 
-                {/* {folders.map((folder) => {
+                {folders.map((folder) => {
                   const count = cards.filter((c) => c.folder_id === folder.id).length;
                   const isSelected = selectedFolderId === folder.id;
 
@@ -275,7 +275,7 @@ export default function Home() {
                       >
                         📂 {folder.name} ({count})
                       </button>
-                      <button
+                      {/* <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteFolder(folder.id, folder.name);
@@ -287,10 +287,10 @@ export default function Home() {
                         title="Delete Folder"
                       >
                         🗑️
-                      </button>
+                      </button> */}
                     </div>
                   );
-                })} */}
+                })}
               </div>
             </section>
 
