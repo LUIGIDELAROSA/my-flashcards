@@ -2,7 +2,9 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI, Type } from '@google/genai';
 
+
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
@@ -48,7 +50,9 @@ export async function POST(req: Request) {
       text: `You are an expert educator creating an exhaustive study deck from the uploaded document.
 
     GOAL
-    Extract EVERY testable fact from the document so that a student who masters all the flashcards has effectively mastered the entire document. Missing a topic is a failure. When in doubt, include it.
+    Extract the most critical testable facts from the document. 
+    CRITICAL LIMIT: Generate a MAXIMUM of 40 flashcards. Prioritize the most important concepts. 
+    If the document is short, generate only what is necessary.
 
     PROCESS (follow internally before answering)
     1. Scan the document section by section (every heading, subheading, paragraph, bullet, table, figure caption, footnote, sidebar, and summary box).
