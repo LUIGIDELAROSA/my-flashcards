@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
     GOAL
     Extract the most critical testable facts from the document. 
-    CRITICAL LIMIT: Generate a MAXIMUM of 40 flashcards. Prioritize the most important concepts. 
+    CRITICAL LIMIT: Generate a MAXIMUM of 50 flashcards. Prioritize the most important concepts. 
     If the document is short, generate only what is necessary.
 
     PROCESS (follow internally before answering)
