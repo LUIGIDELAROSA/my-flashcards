@@ -2,18 +2,15 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI, Type } from '@google/genai';
 
-const pdfParse = require('pdf-parse');
-
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    // 1. Check if GEMINI_API_KEY is available
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'Missing GEMINI_API_KEY! Make sure it is added to Vercel Environment Variables and the project is redeployed.' },
+        { error: 'Missing GEMINI_API_KEY! Make sure it is added to Vercel Environment Variables.' },
         { status: 500 }
       );
     }
@@ -25,13 +22,16 @@ export async function POST(req: Request) {
 
     const contents: any[] = [];
 
-    // 2. PDF & Text File handling gamit ang pdf-parse (Magaan, iwas Request Entity Too Large error)
+    // PDF & Text File handling
     if (file) {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
       if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
         try {
+          // 💡 Dito natin inilagay sa loob ng POST para hindi mag-error sa build/module evaluation
+          // @ts-ignore
+          const pdfParse = require('pdf-parse');
           const pdfData = await pdfParse(buffer);
           contents.push({ text: `Document Content (PDF):\n${pdfData.text}` });
         } catch (pdfError) {
@@ -44,7 +44,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. If text notes are provided
     if (textInput && textInput.trim()) {
       contents.push({ text: `Notes/Text:\n${textInput}` });
     }
@@ -53,7 +52,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No text or file provided.' }, { status: 400 });
     }
 
-    // 4. Prompt Instructions
     contents.push({
       text: `You are an expert educator creating an exhaustive study deck from the uploaded document.
 
