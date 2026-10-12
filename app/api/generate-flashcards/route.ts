@@ -1,7 +1,8 @@
 // app/api/generate-flashcards/route.ts
 import { NextResponse } from 'next/server';
 import { GoogleGenAI, Type } from '@google/genai';
-import pdfParse from 'pdf-parse'; 
+
+const pdfParse = require('pdf-parse');
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
