@@ -1,7 +1,7 @@
 // app/api/generate-flashcards/route.ts
 import { NextResponse } from 'next/server';
 import { GoogleGenAI, Type } from '@google/genai';
-
+import pdfParse from 'pdf-parse'; 
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -24,17 +24,23 @@ export async function POST(req: Request) {
 
     const contents: any[] = [];
 
-    // 2. If a PDF / Text File is uploaded: Direct Base64 conversion
+    // 2. PDF & Text File handling gamit ang pdf-parse (Magaan, iwas Request Entity Too Large error)
     if (file) {
       const arrayBuffer = await file.arrayBuffer();
-      const base64Data = Buffer.from(arrayBuffer).toString('base64');
+      const buffer = Buffer.from(arrayBuffer);
 
-      contents.push({
-        inlineData: {
-          data: base64Data,
-          mimeType: file.type || 'application/pdf',
-        },
-      });
+      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        try {
+          const pdfData = await pdfParse(buffer);
+          contents.push({ text: `Document Content (PDF):\n${pdfData.text}` });
+        } catch (pdfError) {
+          console.error('Error parsing PDF:', pdfError);
+          return NextResponse.json({ error: 'Failed to extract text from the PDF file.' }, { status: 400 });
+        }
+      } else {
+        const textContent = buffer.toString('utf-8');
+        contents.push({ text: `Document Content:\n${textContent}` });
+      }
     }
 
     // 3. If text notes are provided
@@ -46,6 +52,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No text or file provided.' }, { status: 400 });
     }
 
+    // 4. Prompt Instructions
     contents.push({
       text: `You are an expert educator creating an exhaustive study deck from the uploaded document.
 
@@ -95,9 +102,9 @@ export async function POST(req: Request) {
     ]`
     });
 
-    // 4. Call Gemini API using gemini-3.8-flash
+    // 5. Call Gemini API using gemini-1.5-flash (Stable model)
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: 'gemini-1.5-flash',
       contents: contents,
       config: {
         responseMimeType: 'application/json',
