@@ -33,16 +33,22 @@ export default function AIFlashcardGenerator({ onCardsGenerated, onClose }: AIFl
         body: formData,
       });
 
+      // 💡 Check if the server response is actually JSON before parsing
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('The file is too large or the server timed out. Try uploading a smaller PDF or paste your notes directly.');
+      }
+
       const data = await res.json();
 
-      if (data.success && data.cards) {
+      if (res.ok && data.success && data.cards) {
         onCardsGenerated(data.cards);
         onClose();
       } else {
         setErrorMsg(data.error || 'An error occurred while generating flashcards.');
       }
-    } catch (err) {
-      setErrorMsg('Unable to connect to the server.');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Unable to connect to the server.');
     } finally {
       setIsLoading(false);
     }
