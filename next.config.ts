@@ -5,7 +5,7 @@ module.exports = {
 }
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ['pdf-parse'],
 };
 
 export default nextConfig;
