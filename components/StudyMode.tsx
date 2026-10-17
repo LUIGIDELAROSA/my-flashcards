@@ -11,11 +11,14 @@ export interface FlashcardData {
   card_type?: 'identification' | 'multiple_choice';
   options?: string[];
   image_url?: string;
+  box?: number;                  
+  next_review_date?: string;
 }
 
 interface StudyModeProps {
   cards: FlashcardData[];
   onRefresh?: () => void;
+  onUpdateCard?: (cardId: string, box: number, nextReviewDate: string) => Promise<void>;
 }
 
 // 1. HELPER FUNCTION PARA MAG-SHUFFLE NG ARRAY (Fisher-Yates Shuffle)
@@ -28,7 +31,7 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-export default function StudyMode({ cards }: StudyModeProps) {
+export default function StudyMode({ cards, onRefresh, onUpdateCard }: StudyModeProps) {
   // Session Mode State: 'setup' | 'active'
   const [sessionState, setSessionState] = useState<'setup' | 'active'>('setup');
   const [chosenMode, setChosenMode] = useState<'identification' | 'multiple_choice'>('identification');
@@ -117,6 +120,36 @@ export default function StudyMode({ cards }: StudyModeProps) {
     }
   };
 
+  // Spaced Repetition (Leitner Box) Handler
+  const handleSRSRating = async (rating: 'again' | 'good' | 'easy') => {
+  if (!currentCard) return;
+
+  const currentBox = currentCard.box || 1;
+  let newBox = currentBox;
+  let daysToAdd = 1;
+
+  if (rating === 'again') {
+    newBox = 1;
+    daysToAdd = 1;
+  } else if (rating === 'good') {
+    newBox = Math.min(currentBox + 1, 5);
+    daysToAdd = newBox * 3;
+  } else if (rating === 'easy') {
+    newBox = 5;
+    daysToAdd = 14;
+  }
+
+  const nextDate = new Date();
+  nextDate.setDate(nextDate.getDate() + daysToAdd);
+  const nextReviewDateStr = nextDate.toISOString();
+
+  if (onUpdateCard) {
+    await onUpdateCard(currentCard.id, newBox, nextReviewDateStr);
+  }
+
+  handleNextCard();
+};
+
   const handleNextCard = () => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -155,11 +188,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
-
-      // 💡 1. Kunin ang listahan ng available voices sa browser
       const voices = window.speechSynthesis.getVoices();
-
-      // 💡 2. Humanap ng gustong boses (halimbawa: British Accent o Google Voice)
       const preferredVoice = voices.find(
         (v) => v.lang === 'en-PH' || v.name.includes('Google') || v.name.includes('Samantha')
       );
@@ -167,7 +196,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
       if (preferredVoice) {
         utterance.voice = preferredVoice;
       } else {
-        utterance.lang = 'en-US'; // Fallback kung wala ang preferred voice
+        utterance.lang = 'en-US';
       }
 
       utterance.rate = 0.9;
@@ -218,7 +247,7 @@ export default function StudyMode({ cards }: StudyModeProps) {
         </div>
       </div>
     );
-  }
+  } 
 
   // 2️⃣ RESULT SUMMARY SCREEN
   if (showResult) {

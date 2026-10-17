@@ -85,25 +85,25 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // const handleDeleteFolder = async (folderId: string, folderName: string) => {
-  //   const confirmDelete = window.confirm(
-  //     `Are you sure you want to delete folder "${folderName}" and all its flashcards?`
-  //   );
+  // --- 🧠 SPACED REPETITION (SRS) UPDATE HANDLER ---
+  const handleUpdateCardSRS = async (cardId: string, newBox: number, nextReviewDate: string) => {
+    const { error } = await supabase
+      .from('flashcards')
+      .update({ 
+        box: newBox, 
+        next_review_date: nextReviewDate 
+      })
+      .eq('id', cardId);
 
-  //   if (!confirmDelete) return;
-
-  //   await supabase.from('flashcards').delete().eq('folder_id', folderId);
-  //   const { error } = await supabase.from('folders').delete().eq('id', folderId);
-
-  //   if (error) {
-  //     alert('Error deleting folder: ' + error.message);
-  //   } else {
-  //     if (selectedFolderId === folderId) {
-  //       setSelectedFolderId('all');
-  //     }
-  //     fetchData();
-  //   }
-  // };
+    if (error) {
+      console.error('Error updating SRS progress:', error);
+    } else {
+      // Opsyonal: I-update ang local cards state para sync
+      setCards((prev) =>
+        prev.map((c) => (c.id === cardId ? { ...c, box: newBox, next_review_date: nextReviewDate } : c))
+      );
+    }
+  };
 
   // --- HANDLER FOR GENERATING AND SAVING AI CARDS TO SUPABASE ---
   const handleGenerateAiCards = async () => {
@@ -125,7 +125,6 @@ export default function Home() {
       if (aiTextInput) formData.append('text', aiTextInput);
       if (aiFile) formData.append('file', aiFile);
 
-      // 1. Call the API route that processes Gemini AI
       const res = await fetch('/api/generate-flashcards', {
         method: 'POST',
         body: formData,
@@ -137,23 +136,21 @@ export default function Home() {
         throw new Error(data.error || 'Flashcard generation failed.');
       }
 
-      // 2. Format the AI response to match Supabase columns
       const cardsToInsert = data.cards.map((c: { question: string; answer: string; options: string[] }) => ({
         folder_id: aiTargetFolderId,
         question: c.question,
         answer: c.answer,
         options: c.options || [], 
         card_type: 'identification',
+        box: 1, // Simula sa Box 1 para sa bagong AI generated cards
       }));
 
-      // 3. Save directly to Supabase Database
       const { error: insertError } = await supabase.from('flashcards').insert(cardsToInsert);
 
       if (insertError) {
         throw new Error('Error saving to Supabase: ' + insertError.message);
       }
 
-      // Reset Modal Form & Refresh List
       setShowAiModal(false);
       setAiTextInput('');
       setAiFile(null);
@@ -193,7 +190,6 @@ export default function Home() {
             </span>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* 🌙 DARK MODE TOGGLE BUTTON */}
             <button
               onClick={toggleDarkMode}
               style={{
@@ -211,7 +207,6 @@ export default function Home() {
               {isDarkMode ? '☀️ Light' : '🌙 Dark'}
             </button>
 
-            {/* 🤖 AI GENERATOR BUTTON */}
             <button
               onClick={openAiModalWithFolder}
               style={{ ...aiHeaderBtnStyle, backgroundColor: theme.accentBg, color: theme.accentText }}
@@ -275,19 +270,6 @@ export default function Home() {
                       >
                         📂 {folder.name} ({count})
                       </button>
-                      {/* <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteFolder(folder.id, folder.name);
-                        }}
-                        style={{
-                          ...deleteFolderBtnStyle,
-                          color: isSelected ? '#ffaaaa' : theme.subText,
-                        }}
-                        title="Delete Folder"
-                      >
-                        🗑️
-                      </button> */}
                     </div>
                   );
                 })}
@@ -344,7 +326,12 @@ export default function Home() {
               </div>
             ) : mode === 'study' ? (
               <div style={studyWrapperStyle}>
-                <StudyMode cards={filteredCards} onRefresh={fetchData} />
+                {/* 💡 DITO NATIN IPINASA ANG onUpdateCard PROP */}
+                <StudyMode 
+                  cards={filteredCards} 
+                  onRefresh={fetchData} 
+                  onUpdateCard={handleUpdateCardSRS} 
+                />
               </div>
             ) : (
               <div style={responsiveGridStyle}>
@@ -364,7 +351,6 @@ export default function Home() {
           </>
         )}
 
-        {/* --- 🤖 AI GENERATOR MODAL POPUP --- */}
         {showAiModal && (
           <div style={modalOverlayStyle}>
             <div style={{ ...modalContentStyle, backgroundColor: theme.cardBg, color: theme.text }}>
@@ -373,7 +359,6 @@ export default function Home() {
                 Upload a PDF or paste lecture notes to automatically generate flashcards in Supabase.
               </p>
 
-              {/* Target Folder Selector */}
               <div style={{ marginBottom: '14px' }}>
                 <label style={{ ...modalLabelStyle, color: theme.text }}>1. Select Target Folder:</label>
                 <select
@@ -397,7 +382,6 @@ export default function Home() {
                 </select>
               </div>
 
-              {/* PDF Upload */}
               <div style={{ marginBottom: '14px' }}>
                 <label style={{ ...modalLabelStyle, color: theme.text }}>2. Upload PDF / Text File:</label>
                 <input
@@ -412,7 +396,6 @@ export default function Home() {
                 — OR PASTE TEXT —
               </div>
 
-              {/* Text Input */}
               <textarea
                 placeholder="Paste your lecture notes / text here..."
                 value={aiTextInput}
@@ -428,7 +411,6 @@ export default function Home() {
 
               {aiError && <p style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '8px', fontWeight: 600 }}>{aiError}</p>}
 
-              {/* Action Buttons */}
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
                 <button
                   onClick={() => setShowAiModal(false)}
@@ -578,15 +560,6 @@ const folderBtnStyle: React.CSSProperties = {
   padding: '6px 0',
 };
 
-// const deleteFolderBtnStyle: React.CSSProperties = {
-//   background: 'none',
-//   border: 'none',
-//   fontSize: '0.85rem',
-//   cursor: 'pointer',
-//   padding: '4px',
-//   marginLeft: '6px',
-// };
-
 const actionHeaderStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
@@ -640,7 +613,6 @@ const statusMessageStyle: React.CSSProperties = {
   border: '1px solid #e2e8f0',
 };
 
-// Modal Specific Styles
 const modalOverlayStyle: React.CSSProperties = {
   position: 'fixed',
   top: 0,
