@@ -13,6 +13,7 @@ export interface FlashcardData {
   image_url?: string;
   box?: number;                  
   next_review_date?: string;
+  explanation?: string;
 }
 
 interface StudyModeProps {
@@ -402,6 +403,12 @@ export default function StudyMode({ cards, onRefresh, onUpdateCard }: StudyModeP
               <span>
                 ❌ <b>Incorrect.</b> The correct answer is: <b>{currentCard?.answer}</b>
               </span>
+            )}
+            {/* 💡 AI Explanation Clue */}
+            {currentCard?.explanation && (
+              <div style={{ marginTop: '8px', fontSize: '0.85rem', fontWeight: 'normal', opacity: 0.9 }}>
+                💡 <b>Explanation:</b> {currentCard.explanation}
+              </div>
             )}
           </div>
 

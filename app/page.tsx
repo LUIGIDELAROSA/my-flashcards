@@ -89,9 +89,9 @@ export default function Home() {
   const handleUpdateCardSRS = async (cardId: string, newBox: number, nextReviewDate: string) => {
     const { error } = await supabase
       .from('flashcards')
-      .update({ 
-        box: newBox, 
-        next_review_date: nextReviewDate 
+      .update({
+        box: newBox,
+        next_review_date: nextReviewDate
       })
       .eq('id', cardId);
 
@@ -136,13 +136,14 @@ export default function Home() {
         throw new Error(data.error || 'Flashcard generation failed.');
       }
 
-      const cardsToInsert = data.cards.map((c: { question: string; answer: string; options: string[] }) => ({
+      const cardsToInsert = data.cards.map((c: any) => ({
         folder_id: aiTargetFolderId,
         question: c.question,
         answer: c.answer,
-        options: c.options || [], 
+        options: c.options || [],
         card_type: 'identification',
-        box: 1, // Simula sa Box 1 para sa bagong AI generated cards
+        explanation: c.explanation || '',
+        box: 1,
       }));
 
       const { error: insertError } = await supabase.from('flashcards').insert(cardsToInsert);
@@ -327,10 +328,10 @@ export default function Home() {
             ) : mode === 'study' ? (
               <div style={studyWrapperStyle}>
                 {/* 💡 DITO NATIN IPINASA ANG onUpdateCard PROP */}
-                <StudyMode 
-                  cards={filteredCards} 
-                  onRefresh={fetchData} 
-                  onUpdateCard={handleUpdateCardSRS} 
+                <StudyMode
+                  cards={filteredCards}
+                  onRefresh={fetchData}
+                  onUpdateCard={handleUpdateCardSRS}
                 />
               </div>
             ) : (

@@ -53,50 +53,46 @@ export async function POST(req: Request) {
     }
 
     contents.push({
-      text: `You are an expert educator creating an exhaustive study deck from the uploaded document.
+      text: `You are an expert educator creating an exhaustive, high-yield study deck from the uploaded document.
 
     GOAL
-    Extract the most critical testable facts from the document. 
-    CRITICAL LIMIT: Generate a MAXIMUM of 50 flashcards. Prioritize the most important concepts. 
+    Extract the most critical testable facts from the document and generate flashcards with clear context explanations.
+    CRITICAL LIMIT: Generate a MAXIMUM of 50 flashcards. Prioritize high-yield, core concepts.
     If the document is short, generate only what is necessary.
 
     PROCESS (follow internally before answering)
     1. Scan the document section by section (every heading, subheading, paragraph, bullet, table, figure caption, footnote, sidebar, and summary box).
     2. For each section, list every distinct fact it contains: terms, definitions, names, dates, numbers, formulas, laws/principles, steps/processes, classifications, causes/effects, comparisons, examples, exceptions, and acronyms.
     3. Turn EACH distinct fact into its own flashcard. One fact = one card. Never merge multiple facts into one card.
-    4. After drafting, re-scan the document and add cards for anything you skipped.
+    4. Provide a brief, single-sentence EXPLANATION for why the answer is correct to reinforce learning and context.
+    5. After drafting, re-scan the document and add cards for anything crucial you skipped.
 
-    COVERAGE RULES
-    - Generate roughly 1 card for every 2–3 sentences of substantive content. Longer documents must produce proportionally more cards. Do NOT stop at a small round number.
-    - Do NOT skip a section because it seems minor, repetitive, or introductory.
-    - Include items from lists and tables individually (e.g., if a list has 7 items, make cards that test each item).
-    - Include "reverse" cards where useful (definition -> term AND term -> definition) for important concepts.
+    COVERAGE & QUALITY RULES
+    - Generate roughly 1 card for every 2–3 sentences of substantive content. Longer documents must produce proportionally more cards.
+    - Include items from lists and tables individually (e.g., if a list has 7 items, make cards testing key items).
     - Include numbers, dates, names, formulas, and acronym expansions exactly as written in the document.
-    - Do NOT invent facts that are not in the document. Only use information from the document.
     - Avoid duplicate cards, but do not drop a fact just because it is related to another.
+    - Strict Adherence: Do NOT invent facts outside the document.
 
-    QUESTION STYLE
-    - Clear, self-contained, and unambiguous (a student must understand it without seeing the document).
-    - Ask for an exact term, name, value, or definition.
-    - Do not write questions like "According to the text..." or "In the document...".
+    QUESTION & ANSWER STYLE
+    - Questions: Clear, self-contained, and unambiguous (understandable without seeing the text). Never use phrases like "According to the text...".
+    - Answers: Direct, clear, and concise (a word, a short phrase, or one key value).
+    - Explanation: Exactly ONE concise sentence explaining *why* the answer is correct or providing helpful learning context.
 
-    ANSWER STYLE
-    - Direct and concise (a word, a short phrase, or one short sentence).
-
-    DISTRACTORS
+    DISTRACTORS (OPTIONS)
     - For EACH question, provide EXACTLY 3 plausible but INCORRECT options.
-    - Distractors must be the same type/format as the correct answer (e.g., if the answer is a date, all options are dates; if a term, all are closely related terms from the same topic).
-    - Prefer distractors drawn from related concepts in the document, common misconceptions, or near-miss values.
-    - Never use joke answers, obviously wrong answers, or "All of the above / None of the above".
-    - A distractor must never be also correct.
+    - Distractors must match the format/category of the correct answer (e.g., if the answer is a date, all options are realistic dates from the same context).
+    - Prefer distractors drawn from related concepts in the document or common misconceptions.
+    - Never use joke answers, obviously wrong choices, or "All/None of the above".
 
     OUTPUT FORMAT
-    Return ONLY a valid raw JSON array. No markdown, no code fences, no commentary before or after.
+    Return ONLY a valid raw JSON array. Do not wrap in markdown or code blocks (\`\`\`json). No introductory or closing text.
     [
       {
-        "question": "What term describes the process by which plants convert sunlight into chemical energy?",
+        "question": "What process do plants use to convert sunlight into chemical energy?",
         "answer": "Photosynthesis",
-        "options": ["Cellular Respiration", "Phototropism", "Transpiration"]
+        "options": ["Cellular Respiration", "Phototropism", "Transpiration"],
+        "explanation": "Photosynthesis captures light energy using chlorophyll to produce glucose and oxygen from carbon dioxide and water."
       }
     ]`
     });
