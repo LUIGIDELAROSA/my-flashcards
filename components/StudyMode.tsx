@@ -11,7 +11,7 @@ export interface FlashcardData {
   card_type?: 'identification' | 'multiple_choice';
   options?: string[];
   image_url?: string;
-  box?: number;                  
+  box?: number;
   next_review_date?: string;
   explanation?: string;
 }
@@ -119,33 +119,33 @@ export default function StudyMode({ cards, onRefresh, onUpdateCard }: StudyModeP
 
   // Spaced Repetition (Leitner Box) Handler
   const handleSRSRating = async (rating: 'again' | 'good' | 'easy') => {
-  if (!currentCard) return;
+    if (!currentCard) return;
 
-  const currentBox = currentCard.box || 1;
-  let newBox = currentBox;
-  let daysToAdd = 1;
+    const currentBox = currentCard.box || 1;
+    let newBox = currentBox;
+    let daysToAdd = 1;
 
-  if (rating === 'again') {
-    newBox = 1;
-    daysToAdd = 1;
-  } else if (rating === 'good') {
-    newBox = Math.min(currentBox + 1, 5);
-    daysToAdd = newBox * 3;
-  } else if (rating === 'easy') {
-    newBox = 5;
-    daysToAdd = 14;
-  }
+    if (rating === 'again') {
+      newBox = 1;
+      daysToAdd = 1;
+    } else if (rating === 'good') {
+      newBox = Math.min(currentBox + 1, 5);
+      daysToAdd = newBox * 3;
+    } else if (rating === 'easy') {
+      newBox = 5;
+      daysToAdd = 14;
+    }
 
-  const nextDate = new Date();
-  nextDate.setDate(nextDate.getDate() + daysToAdd);
-  const nextReviewDateStr = nextDate.toISOString();
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + daysToAdd);
+    const nextReviewDateStr = nextDate.toISOString();
 
-  if (onUpdateCard) {
-    await onUpdateCard(currentCard.id, newBox, nextReviewDateStr);
-  }
+    if (onUpdateCard) {
+      await onUpdateCard(currentCard.id, newBox, nextReviewDateStr);
+    }
 
-  handleNextCard();
-};
+    handleNextCard();
+  };
 
   const handleNextCard = () => {
     if ('speechSynthesis' in window) {
@@ -244,7 +244,7 @@ export default function StudyMode({ cards, onRefresh, onUpdateCard }: StudyModeP
         </div>
       </div>
     );
-  } 
+  }
 
   // 2️⃣ RESULT SUMMARY SCREEN
   if (showResult) {
@@ -404,12 +404,12 @@ export default function StudyMode({ cards, onRefresh, onUpdateCard }: StudyModeP
                 ❌ <b>Incorrect.</b> The correct answer is: <b>{currentCard?.answer}</b>
               </span>
             )}
-            {/* 💡 AI Explanation Clue */}
-            {currentCard?.explanation && (
-              <div style={{ marginTop: '8px', fontSize: '0.85rem', fontWeight: 'normal', opacity: 0.9 }}>
+            {/* 💡 AI EXPLANATION SECTION */}
+            {currentCard?.explanation ? (
+              <div style={{ marginTop: '10px', fontSize: '0.85rem', textAlign: 'left', borderTop: '1px dashed #d1d5db', paddingTop: '8px' }}>
                 💡 <b>Explanation:</b> {currentCard.explanation}
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* 💡 Spaced Repetition (SRS) Leitner Rating Buttons */}
@@ -422,19 +422,19 @@ export default function StudyMode({ cards, onRefresh, onUpdateCard }: StudyModeP
                 onClick={() => handleSRSRating('again')}
                 style={{ ...srsBtnStyle, backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#fca5a5' }}
               >
-                🔴 Again<br/><span style={{ fontSize: '0.7rem', fontWeight: 'normal' }}>Box 1 (Soon)</span>
+                🔴 Again<br /><span style={{ fontSize: '0.7rem', fontWeight: 'normal' }}>Box 1 (Soon)</span>
               </button>
               <button
                 onClick={() => handleSRSRating('good')}
                 style={{ ...srsBtnStyle, backgroundColor: '#fef3c7', color: '#92400e', borderColor: '#fde68a' }}
               >
-                🟡 Good<br/><span style={{ fontSize: '0.7rem', fontWeight: 'normal' }}>Box +1 (Normal)</span>
+                🟡 Good<br /><span style={{ fontSize: '0.7rem', fontWeight: 'normal' }}>Box +1 (Normal)</span>
               </button>
               <button
                 onClick={() => handleSRSRating('easy')}
                 style={{ ...srsBtnStyle, backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' }}
               >
-                🟢 Easy<br/><span style={{ fontSize: '0.7rem', fontWeight: 'normal' }}>Box 5 (Mastered)</span>
+                🟢 Easy<br /><span style={{ fontSize: '0.7rem', fontWeight: 'normal' }}>Box 5 (Mastered)</span>
               </button>
             </div>
           </div>

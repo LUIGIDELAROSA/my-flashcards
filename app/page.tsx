@@ -107,62 +107,69 @@ export default function Home() {
 
   // --- HANDLER FOR GENERATING AND SAVING AI CARDS TO SUPABASE ---
   const handleGenerateAiCards = async () => {
-    if (!aiTextInput.trim() && !aiFile) {
-      setAiError('Please paste text/notes or upload a PDF file.');
-      return;
+  if (!aiTextInput.trim() && !aiFile) {
+    setAiError('Please paste text/notes or upload a PDF file.');
+    return;
+  }
+
+  if (!aiTargetFolderId) {
+    setAiError('Please select a target folder where the cards will be placed.');
+    return;
+  }
+
+  setAiLoading(true);
+  setAiError('');
+
+  try {
+    const formData = new FormData();
+
+    // 💡 KUNG MAY PASTED TEXT, YUN ANG IPADALA. KAPAG WALA, YUN LANG ANG TIME NA MAG-ATTACH NG FILE.
+    if (aiTextInput.trim()) {
+      formData.append('text', aiTextInput);
+    } else if (aiFile) {
+      formData.append('file', aiFile);
     }
 
-    if (!aiTargetFolderId) {
-      setAiError('Please select a target folder where the cards will be placed.');
-      return;
+    const res = await fetch('/api/generate-flashcards', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success || !data.cards) {
+      throw new Error(data.error || 'Flashcard generation failed.');
     }
 
-    setAiLoading(true);
-    setAiError('');
+    // Direct save to Supabase
+    const cardsToInsert = data.cards.map((c: any) => ({
+      folder_id: aiTargetFolderId,
+      question: c.question,
+      answer: c.answer,
+      options: c.options || [],
+      explanation: c.explanation || '', 
+      card_type: 'identification',
+      box: 1,
+    }));
 
-    try {
-      const formData = new FormData();
-      if (aiTextInput) formData.append('text', aiTextInput);
-      if (aiFile) formData.append('file', aiFile);
+    const { error: insertError } = await supabase.from('flashcards').insert(cardsToInsert);
 
-      const res = await fetch('/api/generate-flashcards', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (!data.success || !data.cards) {
-        throw new Error(data.error || 'Flashcard generation failed.');
-      }
-
-      const cardsToInsert = data.cards.map((c: any) => ({
-        folder_id: aiTargetFolderId,
-        question: c.question,
-        answer: c.answer,
-        options: c.options || [],
-        card_type: 'identification',
-        explanation: c.explanation || '',
-        box: 1,
-      }));
-
-      const { error: insertError } = await supabase.from('flashcards').insert(cardsToInsert);
-
-      if (insertError) {
-        throw new Error('Error saving to Supabase: ' + insertError.message);
-      }
-
-      setShowAiModal(false);
-      setAiTextInput('');
-      setAiFile(null);
-      await fetchData();
-      alert(`✨ Success! Created ${cardsToInsert.length} AI Flashcards!`);
-    } catch (err: any) {
-      setAiError(err.message || 'An error occurred while generating flashcards.');
-    } finally {
-      setAiLoading(false);
+    if (insertError) {
+      throw new Error('Error saving to Supabase: ' + insertError.message);
     }
-  };
+
+    // Reset Modal Form & Refresh List
+    setShowAiModal(false);
+    setAiTextInput('');
+    setAiFile(null);
+    await fetchData();
+    alert(`✨ Success! Created ${cardsToInsert.length} AI Flashcards!`);
+  } catch (err: any) {
+    setAiError(err.message || 'An error occurred while generating flashcards.');
+  } finally {
+    setAiLoading(false);
+  }
+};
 
   const openAiModalWithFolder = () => {
     const defaultFolder = selectedFolderId !== 'all' ? selectedFolderId : folders[0]?.id || '';
