@@ -56,10 +56,6 @@ export default function StudyMode({ cards, onRefresh, onUpdateCard }: StudyModeP
   const currentCard = shuffledCards[currentIndex];
 
   useEffect(() => {
-    restartQuiz();
-  }, [cards]);
-
-  useEffect(() => {
     if (sessionState === 'active' && currentCard) {
       prepareOptionsForCurrentCard();
     }
