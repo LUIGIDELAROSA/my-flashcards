@@ -390,7 +390,7 @@ export default function StudyMode({ cards, onRefresh, onUpdateCard }: StudyModeP
           )}
         </div>
       ) : (
-        /* Feedback & Next Button */
+        /* Feedback & Leitner SRS Rating Buttons Area */
         <div style={feedbackAreaStyle}>
           <div
             style={{
@@ -409,9 +409,32 @@ export default function StudyMode({ cards, onRefresh, onUpdateCard }: StudyModeP
             )}
           </div>
 
-          <button onClick={handleNextCard} style={nextBtnStyle}>
-            {currentIndex + 1 === shuffledCards.length ? 'View Final Score 🏆' : 'Next Card ➡️'}
-          </button>
+          {/* 💡 Spaced Repetition (SRS) Leitner Rating Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#4b5563', textAlign: 'center' }}>
+              Rate familiarity for Spaced Repetition (SRS):
+            </span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+              <button
+                onClick={() => handleSRSRating('again')}
+                style={{ ...srsBtnStyle, backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#fca5a5' }}
+              >
+                🔴 Again<br/><span style={{ fontSize: '0.7rem', fontWeight: 'normal' }}>Box 1 (Soon)</span>
+              </button>
+              <button
+                onClick={() => handleSRSRating('good')}
+                style={{ ...srsBtnStyle, backgroundColor: '#fef3c7', color: '#92400e', borderColor: '#fde68a' }}
+              >
+                🟡 Good<br/><span style={{ fontSize: '0.7rem', fontWeight: 'normal' }}>Box +1 (Normal)</span>
+              </button>
+              <button
+                onClick={() => handleSRSRating('easy')}
+                style={{ ...srsBtnStyle, backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' }}
+              >
+                🟢 Easy<br/><span style={{ fontSize: '0.7rem', fontWeight: 'normal' }}>Box 5 (Mastered)</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -616,6 +639,18 @@ const feedbackBoxStyle: React.CSSProperties = {
   borderRadius: '10px',
   textAlign: 'center',
   fontSize: '0.95rem',
+};
+
+const srsBtnStyle: React.CSSProperties = {
+  padding: '10px 8px',
+  borderRadius: '10px',
+  borderWidth: '1.5px',
+  borderStyle: 'solid',
+  fontWeight: 700,
+  fontSize: '0.85rem',
+  cursor: 'pointer',
+  textAlign: 'center',
+  transition: 'all 0.15s ease',
 };
 
 const nextBtnStyle: React.CSSProperties = {
