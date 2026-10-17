@@ -115,8 +115,13 @@ export async function POST(req: Request) {
                 items: { type: Type.STRING },
                 description: 'Exactly 3 plausible but incorrect choices related to the question'
               },
+              // 💡 IDINAGDAG NATIN ITO PARA HINDI NA MA-FILTER OUT NI GEMINI ANG EXPLANATION:
+              explanation: { 
+                type: Type.STRING, 
+                description: 'A brief, single-sentence explanation for why the answer is correct' 
+              },
             },
-            required: ['question', 'answer', 'options'],
+            required: ['question', 'answer', 'options', 'explanation'],
           },
         },
       },
